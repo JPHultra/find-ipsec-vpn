@@ -91,15 +91,25 @@ This output is saved to the root `target/release/` directory:
 
 ## Arch Linux / Omarchy Installation
 
-To package and install the application through the Arch package manager, follow these steps:
+To package and install the application, simply run the installation script from the root of the repository:
 
-### 1. Build and install the patched strongSwan
+```bash
+./install.sh
+```
+
+The script will automatically check for GPG keys, resolve dependencies, build the custom patched strongSwan backend, compile the Tauri client, and register all Polkit and desktop shortcuts.
+
+### Manual Installation (Alternative)
+
+If you prefer to compile manually, follow these steps:
+
+#### 1. Build and install the patched strongSwan
 ```bash
 cd packaging/arch
 makepkg -p strongswan-fortigate.PKGBUILD -si --noconfirm
 ```
 
-### 2. Build and install the Findmore VPN GUI
+#### 2. Build and install the Findmore VPN GUI
 ```bash
 makepkg -p findmore-vpn.PKGBUILD -si --noconfirm
 ```
