@@ -480,9 +480,20 @@ pub fn run() {
         Manager, WindowEvent,
     };
 
+    let start_in_tray = std::env::args().any(|arg| arg == "--tray" || arg == "-t" || arg == "--minimized" || arg == "--start-in-tray");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let launch_in_tray = args.iter().any(|arg| arg == "--tray" || arg == "-t" || arg == "--minimized" || arg == "--start-in-tray");
+            if !launch_in_tray {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        }))
         .manage(VpnState {
             child_stdin: Mutex::new(None),
             child_process: Mutex::new(None),
@@ -502,7 +513,7 @@ pub fn run() {
             show_notification,
             update_tray_status
         ])
-        .setup(|app| {
+        .setup(move |app| {
             let status_i = MenuItem::with_id(app, "status_info", "Status: Disconnected", false, None::<&str>)?;
             let traffic_i = MenuItem::with_id(app, "traffic_info", "Traffic: 0.00 MB ↓ / 0.00 MB ↑", false, None::<&str>)?;
             let sep_i = PredefinedMenuItem::separator(app)?;
@@ -544,6 +555,15 @@ pub fn run() {
                     _ => {}
                 })
                 .build(app)?;
+
+            if let Some(window) = app.get_webview_window("main") {
+                if start_in_tray {
+                    let _ = window.hide();
+                } else {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
 
             Ok(())
         })
