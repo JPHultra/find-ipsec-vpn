@@ -43,6 +43,18 @@ async function sendNotification(title, body) {
   }
 }
 
+// Tray status and traffic helper
+let currentTrayStatus = 'Disconnected';
+let currentTrayTraffic = '0.00 MB ↓ / 0.00 MB ↑';
+
+async function updateTrayMenu(status, traffic) {
+  if (status !== undefined) currentTrayStatus = status;
+  if (traffic !== undefined) currentTrayTraffic = traffic;
+  try {
+    await invoke('update_tray_status', { status: currentTrayStatus, traffic: currentTrayTraffic });
+  } catch (_) {}
+}
+
 // Helpers to format metrics
 function formatBytes(bytes) {
   if (bytes === 0 || isNaN(bytes)) return '0.00 MB';
@@ -347,10 +359,21 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Bind password eye toggle buttons
   document.querySelectorAll('.btn-toggle-password').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const targetId = btn.getAttribute('data-for');
       const input = document.getElementById(targetId);
       if (!input) return;
+
+      // If input value is empty, load saved secrets for the current editor profile
+      if (input.value === '' && editorProfileId) {
+        try {
+          const secrets = await invoke('get_profile_secrets', { profileId: editorProfileId });
+          if (secrets) {
+            if (secrets.psk && !inputEditPsk.value) inputEditPsk.value = secrets.psk;
+            if (secrets.password && !inputEditPassword.value) inputEditPassword.value = secrets.password;
+          }
+        } catch (_) {}
+      }
 
       const isPassword = input.type === 'password';
       input.type = isPassword ? 'text' : 'password';
@@ -574,21 +597,26 @@ window.addEventListener('DOMContentLoaded', async () => {
           if (msg.state === 'Resolving' || msg.state === 'Connecting' || msg.state === 'EstablishingTunnel') {
             showPanel(viewConnecting);
             connectingMessage.textContent = msg.message;
+            updateTrayMenu(msg.state);
           } else if (msg.state === 'WaitingForOtp') {
             showPanel(viewOtp);
             inputOtp.focus();
             sendNotification('Findmore VPN 2FA Required', 'Please enter the verification code sent to your email.');
+            updateTrayMenu('Waiting for 2FA');
           } else if (msg.state === 'Connected') {
             showPanel(viewConnected);
             sendNotification('Findmore VPN Connected', 'Secure IPsec tunnel successfully established.');
+            updateTrayMenu('Connected');
           } else if (msg.state === 'Disconnected') {
             showPanel(viewConfig);
+            updateTrayMenu('Disconnected', '0.00 MB ↓ / 0.00 MB ↑');
 
             // Handle Auto-Reconnect on drop
             if (!isUserInitiatedDisconnect && autoReconnectToggle && autoReconnectToggle.checked && !isAutoReconnecting) {
               isAutoReconnecting = true;
               appendSessionLog('Connection dropped unexpectedly. Auto-reconnecting in 3 seconds...', true);
               sendNotification('Findmore VPN Drop', 'Tunnel dropped unexpectedly. Reconnecting in 3s...');
+              updateTrayMenu('Reconnecting...');
               setTimeout(() => {
                 isAutoReconnecting = false;
                 formConnect.dispatchEvent(new Event('submit', { cancelable: true }));
@@ -604,12 +632,14 @@ window.addEventListener('DOMContentLoaded', async () => {
           statProtocol.textContent = msg.protocol;
           appendSessionLog(`Tunnel established. VPN IP: ${msg.vpn_ip}`);
           showPanel(viewConnected);
+          updateTrayMenu(`Connected (${msg.vpn_ip})`);
           break;
 
         case 'Stats':
           trafficSent.textContent = formatBytes(msg.bytes_sent);
           trafficReceived.textContent = formatBytes(msg.bytes_received);
           uptimeCounter.textContent = formatSeconds(msg.uptime_secs);
+          updateTrayMenu(undefined, `${formatBytes(msg.bytes_received)} ↓ / ${formatBytes(msg.bytes_sent)} ↑`);
           break;
 
         case 'Log':
@@ -621,6 +651,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           showPanel(viewConfig);
           showErrorBanner(msg.message);
           sendNotification('Findmore VPN Error', msg.message);
+          updateTrayMenu('Disconnected', '0.00 MB ↓ / 0.00 MB ↑');
           break;
       }
     } catch (err) {

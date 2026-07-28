@@ -30,14 +30,16 @@ pub struct SecretsStatus {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct SecretsStore {
-    psk: String,
-    password: String,
+pub struct SecretsStore {
+    pub psk: String,
+    pub password: String,
 }
 
 pub struct VpnState {
     pub child_stdin: Mutex<Option<ChildStdin>>,
     pub child_process: Mutex<Option<Child>>,
+    pub status_item: Mutex<Option<tauri::menu::MenuItem<tauri::Wry>>>,
+    pub traffic_item: Mutex<Option<tauri::menu::MenuItem<tauri::Wry>>>,
 }
 
 fn get_config_dir() -> PathBuf {
@@ -306,6 +308,12 @@ fn get_profile_secrets_status(profile_id: String) -> Result<SecretsStatus, Strin
 }
 
 #[tauri::command]
+fn get_profile_secrets(profile_id: String) -> Result<SecretsStore, String> {
+    let (psk, password) = load_secrets(&profile_id)?;
+    Ok(SecretsStore { psk, password })
+}
+
+#[tauri::command]
 fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), String> {
     let mut child_stdin_lock = state.child_stdin.lock().unwrap();
     let mut child_proc_lock = state.child_process.lock().unwrap();
@@ -453,10 +461,21 @@ fn show_notification(app: AppHandle, title: String, body: String) -> Result<(), 
     Ok(())
 }
 
+#[tauri::command]
+fn update_tray_status(state: State<'_, VpnState>, status: String, traffic: String) -> Result<(), String> {
+    if let Some(ref status_item) = *state.status_item.lock().unwrap() {
+        let _ = status_item.set_text(format!("Status: {}", status));
+    }
+    if let Some(ref traffic_item) = *state.traffic_item.lock().unwrap() {
+        let _ = traffic_item.set_text(format!("Traffic: {}", traffic));
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::{
-        menu::{Menu, MenuItem},
+        menu::{Menu, MenuItem, PredefinedMenuItem},
         tray::TrayIconBuilder,
         Manager, WindowEvent,
     };
@@ -467,6 +486,8 @@ pub fn run() {
         .manage(VpnState {
             child_stdin: Mutex::new(None),
             child_process: Mutex::new(None),
+            status_item: Mutex::new(None),
+            traffic_item: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             get_profiles,
@@ -474,16 +495,33 @@ pub fn run() {
             delete_profile,
             set_active_profile,
             get_profile_secrets_status,
+            get_profile_secrets,
             connect_vpn,
             submit_otp,
             disconnect_vpn,
-            show_notification
+            show_notification,
+            update_tray_status
         ])
         .setup(|app| {
-            let quit_i = MenuItem::with_id(app, "quit", "Quit Findmore VPN", true, None::<&str>)?;
+            let status_i = MenuItem::with_id(app, "status_info", "Status: Disconnected", false, None::<&str>)?;
+            let traffic_i = MenuItem::with_id(app, "traffic_info", "Traffic: 0.00 MB ↓ / 0.00 MB ↑", false, None::<&str>)?;
+            let sep_i = PredefinedMenuItem::separator(app)?;
             let show_i = MenuItem::with_id(app, "show", "Show Dashboard", true, None::<&str>)?;
             let hide_i = MenuItem::with_id(app, "hide", "Hide to Tray", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show_i, &hide_i, &quit_i])?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit Findmore VPN", true, None::<&str>)?;
+
+            let menu = Menu::with_items(app, &[
+                &status_i,
+                &traffic_i,
+                &sep_i,
+                &show_i,
+                &hide_i,
+                &quit_i,
+            ])?;
+
+            let state = app.state::<VpnState>();
+            *state.status_item.lock().unwrap() = Some(status_i);
+            *state.traffic_item.lock().unwrap() = Some(traffic_i);
 
             let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
