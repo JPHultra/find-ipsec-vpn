@@ -17,17 +17,31 @@ let appNavTabs, navConnect, navProfiles;
 let configErrorBanner;
 
 // Connect view elements
-let profileSelector, summaryHost, summaryUsername;
+let profileSelector, summaryHost, summaryUsername, autoReconnectToggle;
 
 // Profiles Editor view elements
-let editorProfileSelector, btnEditorNew, btnEditorDelete;
+let editorProfileSelector, btnEditorNew, btnEditorDelete, keyringBadge;
 let inputEditProfileName, inputEditHost, inputEditRemoteId, inputEditUsername, inputEditPsk, inputEditPassword;
+
+// Log drawer action buttons
+let btnCopyLogs, btnExportLogs;
 
 // State helper variables
 let unlistenVpnEvent = null;
 let profiles = [];
 let activeProfileId = 'default';
 let editorProfileId = 'default';
+let isUserInitiatedDisconnect = false;
+let isAutoReconnecting = false;
+
+// Notification helper
+async function sendNotification(title, body) {
+  try {
+    await invoke('show_notification', { title, body });
+  } catch (err) {
+    console.log('Desktop notification emitted:', title, body);
+  }
+}
 
 // Helpers to format metrics
 function formatBytes(bytes) {
@@ -203,7 +217,7 @@ async function loadProfiles() {
       inputEditPsk.value = '';
       inputEditPassword.value = '';
 
-      // Check key storage secrets status for placeholders
+      // Check key storage secrets status for placeholders and badge
       const status = await invoke('get_profile_secrets_status', { profileId: editorProfileId });
       if (status.has_psk) {
         inputEditPsk.placeholder = '•••••••••••••••• (Saved)';
@@ -215,6 +229,14 @@ async function loadProfiles() {
         inputEditPassword.placeholder = '•••••••••••••••• (Saved)';
       } else {
         inputEditPassword.placeholder = '••••••••••••••••';
+      }
+
+      if (keyringBadge) {
+        if (status.has_psk || status.has_password) {
+          keyringBadge.classList.remove('hidden');
+        } else {
+          keyringBadge.classList.add('hidden');
+        }
       }
     }
   } catch (err) {
@@ -283,17 +305,28 @@ window.addEventListener('DOMContentLoaded', async () => {
   profileSelector = document.getElementById('profile-selector');
   summaryHost = document.getElementById('summary-host');
   summaryUsername = document.getElementById('summary-username');
+  autoReconnectToggle = document.getElementById('auto-reconnect-toggle');
 
   // Bind Editor View fields
   editorProfileSelector = document.getElementById('editor-profile-selector');
   btnEditorNew = document.getElementById('btn-editor-new');
   btnEditorDelete = document.getElementById('btn-editor-delete');
+  keyringBadge = document.getElementById('keyring-badge');
   inputEditProfileName = document.getElementById('edit-profile-name');
   inputEditHost = document.getElementById('edit-host');
   inputEditRemoteId = document.getElementById('edit-remote-identity');
   inputEditUsername = document.getElementById('edit-username');
   inputEditPsk = document.getElementById('edit-psk');
   inputEditPassword = document.getElementById('edit-password');
+
+  // Bind log elements
+  sessionLogPre = document.getElementById('session-log-pre');
+  engineLogPre = document.getElementById('engine-log-pre');
+  btnToggleLogs = document.getElementById('btn-toggle-logs');
+  btnClearLogs = document.getElementById('btn-clear-logs');
+  btnCopyLogs = document.getElementById('btn-copy-logs');
+  btnExportLogs = document.getElementById('btn-export-logs');
+  logDrawer = document.getElementById('log-drawer');
 
   // Bind status/metric elements
   connectingMessage = document.getElementById('connecting-message');
@@ -414,6 +447,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   formConnect.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideErrorBanner();
+    isUserInitiatedDisconnect = false;
 
     // Switch to connecting view
     showPanel(viewConnecting);
@@ -426,6 +460,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       showPanel(viewConfig);
       showErrorBanner(`Connection Failed: ${err}`);
       appendSessionLog(`Elevated connection initiation failed: ${err}`, true);
+      sendNotification('Findmore VPN Failed', `Connection failed: ${err}`);
     }
   });
 
@@ -450,10 +485,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Handle Cancels and Disconnects
   const disconnectHandler = async () => {
+    isUserInitiatedDisconnect = true;
     appendSessionLog('Disconnecting tunnel...');
     try {
       await invoke('disconnect_vpn');
       showPanel(viewConfig);
+      sendNotification('Findmore VPN Disconnected', 'VPN tunnel has been disconnected.');
     } catch (err) {
       appendSessionLog(`Disconnect operation failed: ${err}`, true);
     }
@@ -473,6 +510,40 @@ window.addEventListener('DOMContentLoaded', async () => {
     sessionLogPre.innerHTML = '';
     engineLogPre.innerHTML = '';
   });
+
+  // Copy Active Logs to Clipboard
+  if (btnCopyLogs) {
+    btnCopyLogs.addEventListener('click', async () => {
+      const activePane = document.querySelector('.tab-pane.active pre');
+      const text = activePane ? activePane.innerText : '';
+      if (text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          btnCopyLogs.textContent = 'Copied!';
+          setTimeout(() => btnCopyLogs.textContent = 'Copy', 1500);
+        } catch (_) {
+          appendSessionLog('Clipboard copy not permitted.', true);
+        }
+      }
+    });
+  }
+
+  // Export Combined Log File
+  if (btnExportLogs) {
+    btnExportLogs.addEventListener('click', () => {
+      const sessionText = sessionLogPre ? sessionLogPre.innerText : '';
+      const engineText = engineLogPre ? engineLogPre.innerText : '';
+      const combined = `=== FINDMORE VPN SESSION LOGS ===\n${sessionText}\n\n=== FINDMORE VPN ENGINE LOGS ===\n${engineText}`;
+      const blob = new Blob([combined], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `findmore-vpn-logs-${new Date().toISOString().slice(0, 10)}.log`;
+      a.click();
+      URL.revokeObjectURL(url);
+      appendSessionLog('Exported logs to diagnostic file.');
+    });
+  }
 
   // Tab Panel selections
   tabs = document.querySelectorAll('.tab-btn');
@@ -506,10 +577,23 @@ window.addEventListener('DOMContentLoaded', async () => {
           } else if (msg.state === 'WaitingForOtp') {
             showPanel(viewOtp);
             inputOtp.focus();
+            sendNotification('Findmore VPN 2FA Required', 'Please enter the verification code sent to your email.');
           } else if (msg.state === 'Connected') {
             showPanel(viewConnected);
+            sendNotification('Findmore VPN Connected', 'Secure IPsec tunnel successfully established.');
           } else if (msg.state === 'Disconnected') {
             showPanel(viewConfig);
+
+            // Handle Auto-Reconnect on drop
+            if (!isUserInitiatedDisconnect && autoReconnectToggle && autoReconnectToggle.checked && !isAutoReconnecting) {
+              isAutoReconnecting = true;
+              appendSessionLog('Connection dropped unexpectedly. Auto-reconnecting in 3 seconds...', true);
+              sendNotification('Findmore VPN Drop', 'Tunnel dropped unexpectedly. Reconnecting in 3s...');
+              setTimeout(() => {
+                isAutoReconnecting = false;
+                formConnect.dispatchEvent(new Event('submit', { cancelable: true }));
+              }, 3000);
+            }
           }
           break;
 
@@ -536,6 +620,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           appendSessionLog(`Helper Error: ${msg.message}`, true);
           showPanel(viewConfig);
           showErrorBanner(msg.message);
+          sendNotification('Findmore VPN Error', msg.message);
           break;
       }
     } catch (err) {

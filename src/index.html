@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Findmore IPSec VPN</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,10 +19,7 @@
     <!-- HEADER -->
     <header class="app-header">
       <div class="logo-area">
-        <svg class="vpn-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-        </svg>
+        <img src="./assets/findmore_simple_icon.svg" class="vpn-logo" alt="Findmore Logo" />
         <div class="logo-text">
           <span class="brand-name">Findmore</span>
           <span class="sub-brand">IPSec VPN</span>
@@ -70,6 +67,18 @@
             </div>
           </div>
 
+          <div class="form-group-checkbox">
+            <label class="checkbox-label" for="auto-reconnect-toggle">
+              <input type="checkbox" id="auto-reconnect-toggle" class="checkbox-input" />
+              <span class="checkbox-box">
+                <svg class="checkmark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Auto-reconnect on drop</span>
+            </label>
+          </div>
+
           <button type="submit" id="btn-connect" class="btn btn-primary">
             <span>Connect VPN</span>
             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -99,6 +108,13 @@
         </div>
 
         <form id="profile-editor-form" class="vpn-form">
+          <div id="keyring-badge" class="keyring-badge hidden">
+            <svg class="icon-keyring" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            <span>Credentials Secured in OS Keyring</span>
+          </div>
+
           <div class="form-group">
             <label for="edit-profile-name">Profile Name</label>
             <input type="text" id="edit-profile-name" required placeholder="e.g. Findmore PT" autocomplete="off" />
@@ -268,7 +284,11 @@
           <button class="tab-btn active" data-tab="tab-session">Session Logs</button>
           <button class="tab-btn" data-tab="tab-engine">Engine Logs</button>
         </div>
-        <button id="btn-clear-logs" class="btn-small" title="Clear logs">Clear</button>
+        <div class="drawer-header-actions">
+          <button id="btn-copy-logs" class="btn-small" title="Copy logs to clipboard">Copy</button>
+          <button id="btn-export-logs" class="btn-small" title="Export log file">Export</button>
+          <button id="btn-clear-logs" class="btn-small" title="Clear logs">Clear</button>
+        </div>
       </div>
       <div class="drawer-content">
         <div id="tab-session" class="tab-pane active">

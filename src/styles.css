@@ -6,7 +6,7 @@
   --surface: rgba(24, 27, 36, 0.7);
   --surface-border: rgba(255, 255, 255, 0.08);
   --surface-highlight: rgba(255, 255, 255, 0.04);
-  
+
   --color-primary: #00f2fe;
   --color-primary-dark: #0072ff;
   --color-success: #10b981;
@@ -14,14 +14,14 @@
   --color-danger: #f43f5e;
   --color-danger-glow: rgba(244, 63, 94, 0.25);
   --color-warning: #fbbf24;
-  
+
   --text-main: #f3f4f6;
   --text-muted: #9ca3af;
   --text-dark: #6b7280;
-  
+
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  
+
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -39,16 +39,21 @@
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, rgba(0, 114, 255, 0.1) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.05) 0px, transparent 50%);
   color: var(--text-main);
+  min-height: 100vh;
+  min-height: 100dvh;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
   -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* APP CONTAINER */
@@ -157,9 +162,11 @@ body {
 .view-viewport::-webkit-scrollbar {
   width: 4px;
 }
+
 .view-viewport::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .view-viewport::-webkit-scrollbar-thumb {
   background: var(--surface-border);
   border-radius: 2px;
@@ -181,8 +188,15 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* FORM STYLING */
@@ -331,7 +345,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pulse-ring {
@@ -346,9 +362,19 @@ body {
 }
 
 @keyframes pulse-ring-animation {
-  0% { transform: scale(0.8); opacity: 0.5; }
-  50% { opacity: 0.2; }
-  100% { transform: scale(1.6); opacity: 0; }
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
+
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
 }
 
 .status-heading {
@@ -454,9 +480,20 @@ body {
 }
 
 @keyframes glow-pulse {
-  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 .uptime-badge {
@@ -564,7 +601,8 @@ body {
 
 /* LOG DRAWER */
 .log-drawer {
-  height: 40px; /* Collapsed state height */
+  height: 40px;
+  /* Collapsed state height */
   border-top: 1px solid var(--surface-border);
   background-color: #0b0c10;
   display: flex;
@@ -575,7 +613,8 @@ body {
 }
 
 .log-drawer.expanded {
-  height: 220px; /* Expanded state height */
+  height: 220px;
+  /* Expanded state height */
 }
 
 .drawer-header {
@@ -586,6 +625,108 @@ body {
   align-items: center;
   cursor: pointer;
   background-color: rgba(24, 27, 36, 0.3);
+}
+
+.drawer-header-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.form-group-checkbox {
+  margin: 6px 0 12px;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-fast);
+}
+
+.checkbox-label:hover {
+  color: var(--text-main);
+}
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.checkbox-box {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.checkbox-label:hover .checkbox-box {
+  border-color: var(--color-primary);
+  background-color: var(--surface-highlight);
+}
+
+.checkbox-input:focus-visible + .checkbox-box {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 242, 254, 0.25);
+}
+
+.checkbox-input:checked + .checkbox-box {
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+}
+
+.checkmark-icon {
+  width: 12px;
+  height: 12px;
+  color: #0b0c10;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all var(--transition-fast);
+}
+
+.checkbox-input:checked + .checkbox-box .checkmark-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.keyring-badge {
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #a7f3d0;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keyring-badge.hidden {
+  display: none !important;
+}
+
+.icon-keyring {
+  width: 16px;
+  height: 16px;
+  color: var(--color-success);
 }
 
 .tab-selectors {
@@ -644,7 +785,8 @@ body {
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.5;
-  color: #a7f3d0; /* Soft green matrix color for tech log logs */
+  color: #a7f3d0;
+  /* Soft green matrix color for tech log logs */
   background-color: #050608;
   white-space: pre-wrap;
   word-break: break-all;
@@ -654,16 +796,19 @@ body {
 .log-output::-webkit-scrollbar {
   width: 6px;
 }
+
 .log-output::-webkit-scrollbar-track {
   background: #050608;
 }
+
 .log-output::-webkit-scrollbar-thumb {
   background: var(--surface-border);
   border-radius: 3px;
 }
 
 #tab-engine .log-output {
-  color: #93c5fd; /* Soft blue color for Raw strongSwan logs */
+  color: #93c5fd;
+  /* Soft blue color for Raw strongSwan logs */
 }
 
 /* Profiles Row */
@@ -820,7 +965,8 @@ body {
 }
 
 .btn-danger {
-  background-color: #e11d48; /* Solid rose/red */
+  background-color: #e11d48;
+  /* Solid rose/red */
   border: 1px solid #be123c;
   color: #ffffff;
 }
@@ -890,4 +1036,119 @@ body {
 .icon-eye {
   width: 18px;
   height: 18px;
+}
+
+/* ==========================================================================
+   MOBILE & RESPONSIVE TOUCH COMPATIBILITY
+   ========================================================================== */
+
+/* Prevent double-tap zoom delay & tap highlights on interactive elements */
+button,
+input,
+select,
+textarea,
+.nav-tab,
+.tab-btn,
+.btn-toggle-password {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure inputs are text selectable inside forms */
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Fix iOS Safari auto-zoom on input focus by setting font-size to minimum 16px on mobile viewports */
+@media (max-width: 600px) {
+
+  .form-group input,
+  .profile-dropdown {
+    font-size: 16px;
+  }
+}
+
+/* Mobile Devices & Small Viewports (<= 480px) */
+@media (max-width: 480px) {
+  body {
+    padding: 0;
+  }
+
+  .app-container {
+    max-width: 100%;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .app-header {
+    height: calc(58px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  .logo-text {
+    gap: 1px;
+  }
+
+  .brand-name {
+    font-size: 14px;
+  }
+
+  .sub-brand {
+    font-size: 8px;
+  }
+
+  .nav-tab {
+    padding: 6px 10px;
+    font-size: 10px;
+    min-height: 36px;
+  }
+
+  .view-viewport {
+    padding: 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .btn {
+    min-height: 46px;
+    /* Accessible mobile touch target */
+    font-size: 15px;
+  }
+
+  .btn-toggle-password {
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  .profile-manager-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .btn-new-profile-action {
+    width: 100%;
+    height: 44px;
+  }
+
+  .traffic-card {
+    padding: 12px 14px;
+  }
+
+  .traffic-value {
+    font-size: 16px;
+  }
+
+  .log-drawer {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

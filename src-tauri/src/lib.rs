@@ -6,7 +6,7 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::Mutex;
 use std::thread;
 use std::collections::HashMap;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VpnProfile {
@@ -310,6 +310,14 @@ fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), 
     let mut child_stdin_lock = state.child_stdin.lock().unwrap();
     let mut child_proc_lock = state.child_process.lock().unwrap();
     
+    // Clean up stale or exited child process if any
+    if let Some(ref mut child) = *child_proc_lock {
+        if let Ok(Some(_)) = child.try_wait() {
+            *child_proc_lock = None;
+            *child_stdin_lock = None;
+        }
+    }
+
     if child_proc_lock.is_some() {
         return Err("VPN connection helper is already running".to_string());
     }
@@ -362,20 +370,30 @@ fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), 
     });
     
     let connect_line = serde_json::to_string(&connect_cmd).unwrap();
-    writeln!(stdin, "{}", connect_line).map_err(|e| format!("Failed to write to helper stdin: {}", e))?;
+    if let Err(e) = writeln!(stdin, "{}", connect_line) {
+        let _ = child.kill();
+        return Err(format!("Failed to write to helper stdin: {}", e));
+    }
     let _ = stdin.flush();
 
     *child_stdin_lock = Some(stdin);
     *child_proc_lock = Some(child);
 
+    let app_handle_clone = app_handle.clone();
     thread::spawn(move || {
         let reader = BufReader::new(stdout);
         for line in reader.lines() {
             if let Ok(l) = line {
-                let _ = app_handle.emit("vpn-event", l);
+                let _ = app_handle_clone.emit("vpn-event", l);
             }
         }
-        let _ = app_handle.emit("vpn-event", "{\"type\":\"Status\",\"state\":\"Disconnected\",\"message\":\"Helper process exited\"}");
+        
+        // Clean up process state locks when helper process exits or Polkit prompt fails
+        let state_ref = app_handle_clone.state::<VpnState>();
+        *state_ref.child_stdin.lock().unwrap() = None;
+        *state_ref.child_process.lock().unwrap() = None;
+
+        let _ = app_handle_clone.emit("vpn-event", "{\"type\":\"Status\",\"state\":\"Disconnected\",\"message\":\"Helper process exited\"}");
     });
 
     Ok(())
@@ -423,10 +441,29 @@ fn disconnect_vpn(state: State<'_, VpnState>) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn show_notification(app: AppHandle, title: String, body: String) -> Result<(), String> {
+    use tauri_plugin_notification::NotificationExt;
+    let _ = app
+        .notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show();
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri::{
+        menu::{Menu, MenuItem},
+        tray::TrayIconBuilder,
+        Manager, WindowEvent,
+    };
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(VpnState {
             child_stdin: Mutex::new(None),
             child_process: Mutex::new(None),
@@ -439,8 +476,46 @@ pub fn run() {
             get_profile_secrets_status,
             connect_vpn,
             submit_otp,
-            disconnect_vpn
+            disconnect_vpn,
+            show_notification
         ])
+        .setup(|app| {
+            let quit_i = MenuItem::with_id(app, "quit", "Quit Findmore VPN", true, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", "Show Dashboard", true, None::<&str>)?;
+            let hide_i = MenuItem::with_id(app, "hide", "Hide to Tray", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_i, &hide_i, &quit_i])?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "hide" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.hide();
+                        }
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+
+            Ok(())
+        })
+        .on_window_event(|window, event| match event {
+            WindowEvent::CloseRequested { api, .. } => {
+                let _ = window.hide();
+                api.prevent_close();
+            }
+            _ => {}
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
