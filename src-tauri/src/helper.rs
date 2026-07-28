@@ -401,8 +401,9 @@ fn main() {
                             
                             // Search for non-newline credential prompts in buffer
                             let current_str = String::from_utf8_lossy(&buffer);
+                            let trimmed_str = current_str.trim();
                             
-                            if current_str.ends_with("Preshared Key: ") {
+                            if trimmed_str.ends_with("Preshared Key:") {
                                 buffer.clear();
                                 let _ = reader.write_all(format!("{}\n", psk_secret).as_bytes());
                                 let _ = reader.flush();
@@ -411,7 +412,7 @@ fn main() {
                                     state: "Authenticating".to_string(),
                                     message: "Sending pre-shared key...".to_string(),
                                 });
-                            } else if current_str.ends_with("Password: ") || current_str.ends_with("EAP password: ") {
+                            } else if trimmed_str.ends_with("Password:") || trimmed_str.ends_with("EAP password:") {
                                 buffer.clear();
                                 let _ = reader.write_all(format!("{}\n", pwd_secret).as_bytes());
                                 let _ = reader.flush();
@@ -420,7 +421,14 @@ fn main() {
                                     state: "Authenticating".to_string(),
                                     message: "Sending account password...".to_string(),
                                 });
-                            } else if current_str.contains("Verification code:") || current_str.contains("OTP:") || current_str.contains("Enter OTP:") {
+                            } else if trimmed_str.ends_with("PIN:")
+                                || trimmed_str.ends_with("Passcode:")
+                                || trimmed_str.contains("Verification code:")
+                                || trimmed_str.contains("OTP:")
+                                || trimmed_str.contains("Enter OTP:")
+                                || trimmed_str.contains("Enter PIN:")
+                                || trimmed_str.contains("Token:")
+                            {
                                 buffer.clear();
                                 *state_clone.lock().unwrap() = "WaitingForOtp".to_string();
                                 send_msg(&HelperMessage::Status {

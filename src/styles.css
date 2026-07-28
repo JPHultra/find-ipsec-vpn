@@ -231,12 +231,6 @@ body {
   background-color: rgba(24, 27, 36, 0.95);
 }
 
-.input-password-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
 /* BUTTONS */
 .btn {
   display: inline-flex;
@@ -863,6 +857,7 @@ body {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .input-password-wrapper input {
@@ -873,6 +868,8 @@ body {
 .btn-toggle-password {
   position: absolute;
   right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   color: var(--text-muted);
