@@ -215,11 +215,27 @@ fn main() {
                         }
                     };
                     
+                    // Resolve Remote Identity IP dynamically if not specified
+                    let remote_id = if remote_identity.trim().is_empty() {
+                        use std::net::ToSocketAddrs;
+                        if let Ok(mut addrs) = format!("{}:500", host).to_socket_addrs() {
+                            if let Some(addr) = addrs.next() {
+                                addr.ip().to_string()
+                            } else {
+                                host.clone()
+                            }
+                        } else {
+                            host.clone()
+                        }
+                    } else {
+                        remote_identity.clone()
+                    };
+
                     // Setup child process
                     let mut cmd = Command::new("charon-cmd");
                     cmd.arg("--host").arg(&host)
                        .arg("--identity").arg("%any")
-                       .arg("--remote-identity").arg(&remote_identity)
+                       .arg("--remote-identity").arg(&remote_id)
                        .arg("--xauth-username").arg(&username)
                        .arg("--profile").arg("ikev1-xauth-psk-am")
                        .arg("--ike-proposal").arg("aes128-sha256-modp2048")
@@ -368,7 +384,7 @@ fn main() {
                     current_conn = Some(VpnConnection {
                         child,
                         _master: pty.master,
-                        gateway_ip: remote_identity,
+                        gateway_ip: remote_id,
                         state,
                     });
                 }

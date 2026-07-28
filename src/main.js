@@ -118,7 +118,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const fullConfig = await invoke('get_config');
     if (fullConfig && fullConfig.config) {
       inputHost.value = fullConfig.config.host || 'vpn.findmore.pt';
-      inputRemoteId.value = fullConfig.config.remote_identity || '88.157.96.201';
+      inputRemoteId.value = fullConfig.config.remote_identity || '';
       inputUsername.value = fullConfig.config.username || '';
       if (fullConfig.has_psk) {
         inputPsk.placeholder = '•••••••••••••••• (Saved)';
