@@ -132,15 +132,33 @@ fn parse_xfrm_stats(output: &str, gateway_ip: &str) -> (u64, u64) {
         }
         
         for i in 0..lines.len() {
-            if lines[i].starts_with("lifetime current:") && i + 1 < lines.len() {
-                let bytes_line = lines[i + 1].trim();
-                let words: Vec<&str> = bytes_line.split_whitespace().collect();
-                if words.len() >= 2 && words[1].starts_with("bytes") {
-                    if let Ok(bytes) = words[0].parse::<u64>() {
-                        if is_outbound {
-                            bytes_sent += bytes;
-                        } else {
-                            bytes_received += bytes;
+            if lines[i].starts_with("lifetime current:") {
+                let content = lines[i]["lifetime current:".len()..].trim();
+                if !content.is_empty() {
+                    // Same line format: "1540(bytes), 15(packets)"
+                    if let Some(num_str) = content.split('(').next() {
+                        if let Ok(bytes) = num_str.trim().parse::<u64>() {
+                            if is_outbound {
+                                bytes_sent += bytes;
+                            } else {
+                                bytes_received += bytes;
+                            }
+                            continue;
+                        }
+                    }
+                }
+                
+                // Fallback to next line format
+                if i + 1 < lines.len() {
+                    let bytes_line = lines[i + 1].trim();
+                    let words: Vec<&str> = bytes_line.split_whitespace().collect();
+                    if words.len() >= 2 && words[1].starts_with("bytes") {
+                        if let Ok(bytes) = words[0].parse::<u64>() {
+                            if is_outbound {
+                                bytes_sent += bytes;
+                            } else {
+                                bytes_received += bytes;
+                            }
                         }
                     }
                 }
