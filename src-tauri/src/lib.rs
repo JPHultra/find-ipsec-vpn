@@ -45,26 +45,105 @@ fn get_config_dir() -> PathBuf {
     PathBuf::from(home).join(".config").join("findmore-vpn")
 }
 
+#[derive(Deserialize)]
+struct UserConfigLegacy {
+    host: String,
+    remote_identity: String,
+    username: String,
+}
+
+fn load_secrets_legacy() -> Result<(String, String), String> {
+    if let (Ok(entry_psk), Ok(entry_pwd)) = (
+        keyring::Entry::new("findmore-vpn", "psk"),
+        keyring::Entry::new("findmore-vpn", "password"),
+    ) {
+        if let (Ok(psk), Ok(password)) = (entry_psk.get_password(), entry_pwd.get_password()) {
+            return Ok((psk, password));
+        }
+    }
+    let path = get_config_dir().join("secrets.json");
+    if path.exists() {
+        if let Ok(file) = File::open(path) {
+            #[derive(Deserialize)]
+            struct SecretsStoreLegacy { psk: String, password: String }
+            if let Ok(sec) = serde_json::from_reader::<_, SecretsStoreLegacy>(file) {
+                return Ok((sec.psk, sec.password));
+            }
+        }
+    }
+    Err("No legacy secrets found".to_string())
+}
+
+fn delete_secrets_legacy() -> Result<(), String> {
+    if let (Ok(entry_psk), Ok(entry_pwd)) = (
+        keyring::Entry::new("findmore-vpn", "psk"),
+        keyring::Entry::new("findmore-vpn", "password"),
+    ) {
+        let _ = entry_psk.delete_credential();
+        let _ = entry_pwd.delete_credential();
+    }
+    Ok(())
+}
+
+fn create_default_config() -> ProfilesConfig {
+    let default_profile = VpnProfile {
+        id: "default".to_string(),
+        name: "Default Profile".to_string(),
+        host: "".to_string(),
+        remote_identity: "".to_string(),
+        username: "".to_string(),
+    };
+    ProfilesConfig {
+        active_profile_id: "default".to_string(),
+        profiles: vec![default_profile],
+    }
+}
+
 fn load_profiles_config() -> Result<ProfilesConfig, String> {
     let path = get_config_dir().join("config.json");
     if !path.exists() {
-        let default_profile = VpnProfile {
-            id: "default".to_string(),
-            name: "Default Profile".to_string(),
-            host: "".to_string(),
-            remote_identity: "".to_string(),
-            username: "".to_string(),
-        };
-        let config = ProfilesConfig {
-            active_profile_id: "default".to_string(),
-            profiles: vec![default_profile],
-        };
+        let config = create_default_config();
         let _ = save_profiles_config(&config);
         return Ok(config);
     }
-    let file = File::open(path).map_err(|e| e.to_string())?;
-    let config: ProfilesConfig = serde_json::from_reader(file).map_err(|e| e.to_string())?;
-    Ok(config)
+    
+    let file = File::open(&path).map_err(|e| e.to_string())?;
+    match serde_json::from_reader::<_, ProfilesConfig>(&file) {
+        Ok(config) => Ok(config),
+        Err(_) => {
+            // Parsing failed. Attempt to migrate from legacy UserConfig layout
+            if let Ok(file_old) = File::open(&path) {
+                if let Ok(old_user_config) = serde_json::from_reader::<_, UserConfigLegacy>(file_old) {
+                    let migrated_profile = VpnProfile {
+                        id: "default".to_string(),
+                        name: "Default Profile".to_string(),
+                        host: old_user_config.host,
+                        remote_identity: old_user_config.remote_identity,
+                        username: old_user_config.username,
+                    };
+                    
+                    // Migrate associated legacy secrets
+                    if let Ok((old_psk, old_pwd)) = load_secrets_legacy() {
+                        let _ = save_secrets("default", &old_psk, &old_pwd);
+                        let _ = delete_secrets_legacy();
+                    }
+                    
+                    let migrated_config = ProfilesConfig {
+                        active_profile_id: "default".to_string(),
+                        profiles: vec![migrated_profile],
+                    };
+                    
+                    let _ = save_profiles_config(&migrated_config);
+                    return Ok(migrated_config);
+                }
+            }
+            
+            // Overwrite with clean default configuration if migration fails
+            let default_config = create_default_config();
+            let _ = save_profiles_config(&default_config);
+            Ok(default_config)
+        }
+    }
 }
 
 fn save_profiles_config(config: &ProfilesConfig) -> Result<(), String> {
