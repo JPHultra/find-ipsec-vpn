@@ -49,7 +49,7 @@ cd packaging/arch
 # Clean previous build directories to ensure no permission blocks
 rm -rf src/ pkg/
 
-if ! makepkg -p strongswan-fortigate.PKGBUILD -si --noconfirm; then
+if ! makepkg -p strongswan-fortigate.PKGBUILD -si; then
     error "Failed to build or install strongswan-fortigate."
 fi
 success "strongswan-fortigate installed successfully."
@@ -59,7 +59,7 @@ info "Building and installing Findmore VPN GUI client..."
 # Clean previous build directories to ensure no permission blocks
 rm -rf src/ pkg/
 
-if ! makepkg -p findmore-vpn.PKGBUILD -si --noconfirm; then
+if ! makepkg -p findmore-vpn.PKGBUILD -si; then
     error "Failed to build or install findmore-vpn."
 fi
 success "Findmore VPN GUI client installed successfully!"

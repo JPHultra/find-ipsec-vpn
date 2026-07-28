@@ -106,12 +106,12 @@ If you prefer to compile manually, follow these steps:
 #### 1. Build and install the patched strongSwan
 ```bash
 cd packaging/arch
-makepkg -p strongswan-fortigate.PKGBUILD -si --noconfirm
+makepkg -p strongswan-fortigate.PKGBUILD -si
 ```
 
 #### 2. Build and install the Findmore VPN GUI
 ```bash
-makepkg -p findmore-vpn.PKGBUILD -si --noconfirm
+makepkg -p findmore-vpn.PKGBUILD -si
 ```
 
 Once installed, the Findmore VPN client will be available in your application launcher menu. Clicking **Connect** will trigger a Polkit system prompt to authenticate administrative access.
