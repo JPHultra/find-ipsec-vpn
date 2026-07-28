@@ -1,267 +1,285 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Findmore VPN</title>
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script type="module" src="/main.js" defer></script>
-  </head>
 
-  <body>
-    <div class="app-container">
-      <!-- HEADER -->
-      <header class="app-header">
-        <div class="logo-area">
-          <svg class="vpn-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-          </svg>
-          <div class="logo-text">
-            <span class="brand-name">findmore</span>
-            <span class="sub-brand">VPN</span>
-          </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Findmore IPSec VPN</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <script type="module" src="/main.js" defer></script>
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="logo-area">
+        <svg class="vpn-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        </svg>
+        <div class="logo-text">
+          <span class="brand-name">Findmore</span>
+          <span class="sub-brand">IPSec VPN</span>
         </div>
-
-        <div id="app-nav-tabs" class="header-nav">
-          <button id="nav-connect" class="nav-tab active">Connect</button>
-          <button id="nav-profiles" class="nav-tab">Profiles</button>
-        </div>
-
-        <div class="app-actions">
-          <button id="btn-toggle-logs" title="Toggle logs">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      <!-- VIEW PANELS CONTAINER -->
-      <div class="view-viewport">
-        
-        <!-- 1. CONNECT VIEW -->
-        <section id="view-config" class="view-panel active">
-          <div id="config-error-banner" class="error-banner hidden"></div>
-          <div class="form-instructions">Select a connection profile and initiate the VPN.</div>
-          <form id="vpn-connect-form" class="vpn-form">
-            <div class="form-group">
-              <label for="profile-selector">Select Profile</label>
-              <select id="profile-selector" class="profile-dropdown">
-                <!-- Dynamically populated -->
-              </select>
-            </div>
-
-            <div id="profile-summary-card" class="summary-card">
-              <div class="summary-item">
-                <span class="summary-label">Gateway Host:</span>
-                <span id="summary-host" class="summary-value">-</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">Username / Email:</span>
-                <span id="summary-username" class="summary-value">-</span>
-              </div>
-            </div>
-
-            <button type="submit" id="btn-connect" class="btn btn-primary">
-              <span>Connect VPN</span>
-              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <path d="M12 7l-3 5h4v5l3-5h-4z" />
-              </svg>
-            </button>
-          </form>
-        </section>
-
-        <!-- 1B. PROFILES MANAGEMENT VIEW -->
-        <section id="view-profiles" class="view-panel">
-          <div class="form-instructions">Create, edit, or delete your VPN connection profiles.</div>
-          
-          <div class="profile-manager-header">
-            <div class="form-group flex-fill">
-              <label for="editor-profile-selector">Select Profile to Edit</label>
-              <select id="editor-profile-selector" class="profile-dropdown">
-                <!-- Dynamically populated -->
-              </select>
-            </div>
-            <button type="button" id="btn-editor-new" class="btn btn-new-profile-action btn-profile-action" title="Create new profile">
-              <span>+ New Profile</span>
-            </button>
-          </div>
-
-          <form id="profile-editor-form" class="vpn-form">
-            <div class="form-group">
-              <label for="edit-profile-name">Profile Name</label>
-              <input type="text" id="edit-profile-name" required placeholder="e.g. Findmore PT" autocomplete="off" />
-            </div>
-
-            <div class="form-group">
-              <label for="edit-host">VPN Gateway Host / IP</label>
-              <input type="text" id="edit-host" required placeholder="vpn.findmore.pt or 88.157.96.201" autocomplete="off" />
-            </div>
-
-            <div class="form-group">
-              <label for="edit-remote-identity">Remote Identity (IP)</label>
-              <input type="text" id="edit-remote-identity" placeholder="Optional (resolves automatically)" autocomplete="off" />
-            </div>
-
-            <div class="form-group">
-              <label for="edit-username">Username / Email</label>
-              <input type="text" id="edit-username" required placeholder="username@findmore.pt" autocomplete="off" />
-            </div>
-
-            <div class="form-group">
-              <label for="edit-psk">Pre-Shared Key (PSK)</label>
-              <div class="input-password-wrapper">
-                <input type="password" id="edit-psk" placeholder="••••••••••••••••" />
-                <button type="button" class="btn-toggle-password" data-for="edit-psk" title="Show/Hide Pre-Shared Key">
-                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="edit-password">Account Password</label>
-              <div class="input-password-wrapper">
-                <input type="password" id="edit-password" placeholder="••••••••••••••••" />
-                <button type="button" class="btn-toggle-password" data-for="edit-password" title="Show/Hide Password">
-                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="profile-editor-actions">
-              <button type="button" id="btn-editor-delete" class="btn btn-danger">Delete Profile</button>
-              <button type="submit" id="btn-editor-save" class="btn btn-primary">Save Profile</button>
-            </div>
-          </form>
-        </section>
-
-        <!-- 2. CONNECTING VIEW -->
-        <section id="view-connecting" class="view-panel">
-          <div class="loader-container">
-            <div class="pulse-ring"></div>
-            <div class="loader-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" class="spin-animation" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-              </svg>
-            </div>
-          </div>
-          <h2 class="status-heading">Connecting</h2>
-          <p id="connecting-message" class="status-subtext">Initializing tunnel SAs...</p>
-          <button id="btn-cancel-connecting" class="btn btn-secondary">Cancel</button>
-        </section>
-
-        <!-- 3. OTP PROMPT VIEW -->
-        <section id="view-otp" class="view-panel">
-          <div class="otp-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
-          </div>
-          <h2 class="status-heading">Two-Factor Authentication</h2>
-          <p class="status-subtext">Please enter the security verification code sent to your email.</p>
-          
-          <form id="otp-form" class="otp-input-area">
-            <input type="text" id="otp-code" required placeholder="Enter OTP code" pattern="[0-9]*" inputmode="numeric" max-length="10" autocomplete="off" autofocus />
-            <div class="otp-actions">
-              <button type="button" id="btn-cancel-otp" class="btn btn-secondary">Cancel</button>
-              <button type="submit" class="btn btn-primary">Verify Code</button>
-            </div>
-          </form>
-        </section>
-
-        <!-- 4. CONNECTED VIEW -->
-        <section id="view-connected" class="view-panel">
-          <!-- PULSING GLOWING BADGE -->
-          <div class="connected-hero">
-            <div class="glowing-circle">
-              <div class="glow-core"></div>
-            </div>
-            <div class="uptime-badge">
-              <span id="uptime-counter">00:00:00</span>
-            </div>
-            <div class="connection-status-text">Connected</div>
-          </div>
-
-          <!-- CONNECTIONS CARD METRICS -->
-          <div class="info-card">
-            <div class="info-row">
-              <span class="info-label">VPN IP</span>
-              <span id="stat-vpn-ip" class="info-val">10.7.1.11</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Gateway Host</span>
-              <span id="stat-gateway" class="info-val">vpn.findmore.pt</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Remote Identity</span>
-              <span id="stat-gateway-ip" class="info-val">88.157.96.201</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Protocol / Mode</span>
-              <span id="stat-protocol" class="info-val">ESP / NAT-T</span>
-            </div>
-          </div>
-
-          <!-- TRAFFIC CARD -->
-          <div class="traffic-card">
-            <div class="traffic-metric">
-              <div class="traffic-header">
-                <svg class="traffic-icon down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                <span>Received</span>
-              </div>
-              <div id="traffic-received" class="traffic-value">0.00 MB</div>
-            </div>
-            <div class="traffic-divider"></div>
-            <div class="traffic-metric">
-              <div class="traffic-header">
-                <svg class="traffic-icon up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                </svg>
-                <span>Sent</span>
-              </div>
-              <div id="traffic-sent" class="traffic-value">0.00 MB</div>
-            </div>
-          </div>
-
-          <button id="btn-disconnect" class="btn btn-danger">
-            <span>Disconnect</span>
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
-        </section>
       </div>
 
-      <!-- LOG DRAWER -->
-      <footer id="log-drawer" class="log-drawer">
-        <div class="drawer-header">
-          <div class="tab-selectors">
-            <button class="tab-btn active" data-tab="tab-session">Session Logs</button>
-            <button class="tab-btn" data-tab="tab-engine">Engine Logs</button>
+      <div id="app-nav-tabs" class="header-nav">
+        <button id="nav-connect" class="nav-tab active">Connect</button>
+        <button id="nav-profiles" class="nav-tab">Profiles</button>
+      </div>
+
+      <div class="app-actions">
+        <button id="btn-toggle-logs" title="Toggle logs">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEW PANELS CONTAINER -->
+    <div class="view-viewport">
+
+      <!-- 1. CONNECT VIEW -->
+      <section id="view-config" class="view-panel active">
+        <div id="config-error-banner" class="error-banner hidden"></div>
+        <div class="form-instructions">Select a connection profile and initiate the VPN.</div>
+        <form id="vpn-connect-form" class="vpn-form">
+          <div class="form-group">
+            <label for="profile-selector">Select Profile</label>
+            <select id="profile-selector" class="profile-dropdown">
+              <!-- Dynamically populated -->
+            </select>
           </div>
-          <button id="btn-clear-logs" class="btn-small" title="Clear logs">Clear</button>
+
+          <div id="profile-summary-card" class="summary-card">
+            <div class="summary-item">
+              <span class="summary-label">Gateway Host:</span>
+              <span id="summary-host" class="summary-value">-</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Username / Email:</span>
+              <span id="summary-username" class="summary-value">-</span>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-connect" class="btn btn-primary">
+            <span>Connect VPN</span>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="M12 7l-3 5h4v5l3-5h-4z" />
+            </svg>
+          </button>
+        </form>
+      </section>
+
+      <!-- 1B. PROFILES MANAGEMENT VIEW -->
+      <section id="view-profiles" class="view-panel">
+        <div class="form-instructions">Create, edit, or delete your VPN connection profiles.</div>
+
+        <div class="profile-manager-header">
+          <div class="form-group flex-fill">
+            <label for="editor-profile-selector">Select Profile to Edit</label>
+            <select id="editor-profile-selector" class="profile-dropdown">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <button type="button" id="btn-editor-new" class="btn btn-new-profile-action btn-profile-action"
+            title="Create new profile">
+            <span>+ New Profile</span>
+          </button>
         </div>
-        <div class="drawer-content">
-          <div id="tab-session" class="tab-pane active">
-            <pre id="session-log-pre" class="log-output">Initialized Findmore VPN client GUI.<br></pre>
+
+        <form id="profile-editor-form" class="vpn-form">
+          <div class="form-group">
+            <label for="edit-profile-name">Profile Name</label>
+            <input type="text" id="edit-profile-name" required placeholder="e.g. Findmore PT" autocomplete="off" />
           </div>
-          <div id="tab-engine" class="tab-pane">
-            <pre id="engine-log-pre" class="log-output"></pre>
+
+          <div class="form-group">
+            <label for="edit-host">VPN Gateway Host / IP</label>
+            <input type="text" id="edit-host" required placeholder="vpn.findmore.pt or 88.157.96.201"
+              autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-remote-identity">Remote Identity (IP)</label>
+            <input type="text" id="edit-remote-identity" placeholder="Optional (resolves automatically)"
+              autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-username">Username / Email</label>
+            <input type="text" id="edit-username" required placeholder="username@findmore.pt" autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-psk">Pre-Shared Key (PSK)</label>
+            <div class="input-password-wrapper">
+              <input type="password" id="edit-psk" placeholder="••••••••••••••••" />
+              <button type="button" class="btn-toggle-password" data-for="edit-psk" title="Show/Hide Pre-Shared Key">
+                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-password">Account Password</label>
+            <div class="input-password-wrapper">
+              <input type="password" id="edit-password" placeholder="••••••••••••••••" />
+              <button type="button" class="btn-toggle-password" data-for="edit-password" title="Show/Hide Password">
+                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="profile-editor-actions">
+            <button type="button" id="btn-editor-delete" class="btn btn-danger">Delete Profile</button>
+            <button type="submit" id="btn-editor-save" class="btn btn-primary">Save Profile</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 2. CONNECTING VIEW -->
+      <section id="view-connecting" class="view-panel">
+        <div class="loader-container">
+          <div class="pulse-ring"></div>
+          <div class="loader-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" class="spin-animation"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
           </div>
         </div>
-      </footer>
+        <h2 class="status-heading">Connecting</h2>
+        <p id="connecting-message" class="status-subtext">Initializing tunnel SAs...</p>
+        <button id="btn-cancel-connecting" class="btn btn-secondary">Cancel</button>
+      </section>
+
+      <!-- 3. OTP PROMPT VIEW -->
+      <section id="view-otp" class="view-panel">
+        <div class="otp-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+          </svg>
+        </div>
+        <h2 class="status-heading">Two-Factor Authentication</h2>
+        <p class="status-subtext">Please enter the security verification code sent to your email.</p>
+
+        <form id="otp-form" class="otp-input-area">
+          <input type="text" id="otp-code" required placeholder="Enter OTP code" pattern="[0-9]*" inputmode="numeric"
+            max-length="10" autocomplete="off" autofocus />
+          <div class="otp-actions">
+            <button type="button" id="btn-cancel-otp" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Verify Code</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 4. CONNECTED VIEW -->
+      <section id="view-connected" class="view-panel">
+        <!-- PULSING GLOWING BADGE -->
+        <div class="connected-hero">
+          <div class="glowing-circle">
+            <div class="glow-core"></div>
+          </div>
+          <div class="uptime-badge">
+            <span id="uptime-counter">00:00:00</span>
+          </div>
+          <div class="connection-status-text">Connected</div>
+        </div>
+
+        <!-- CONNECTIONS CARD METRICS -->
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">VPN IP</span>
+            <span id="stat-vpn-ip" class="info-val">10.7.1.11</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Gateway Host</span>
+            <span id="stat-gateway" class="info-val">vpn.findmore.pt</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Remote Identity</span>
+            <span id="stat-gateway-ip" class="info-val">88.157.96.201</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Protocol / Mode</span>
+            <span id="stat-protocol" class="info-val">ESP / NAT-T</span>
+          </div>
+        </div>
+
+        <!-- TRAFFIC CARD -->
+        <div class="traffic-card">
+          <div class="traffic-metric">
+            <div class="traffic-header">
+              <svg class="traffic-icon down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              <span>Received</span>
+            </div>
+            <div id="traffic-received" class="traffic-value">0.00 MB</div>
+          </div>
+          <div class="traffic-divider"></div>
+          <div class="traffic-metric">
+            <div class="traffic-header">
+              <svg class="traffic-icon up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              <span>Sent</span>
+            </div>
+            <div id="traffic-sent" class="traffic-value">0.00 MB</div>
+          </div>
+        </div>
+
+        <button id="btn-disconnect" class="btn btn-danger">
+          <span>Disconnect</span>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      </section>
     </div>
-  </body>
+
+    <!-- LOG DRAWER -->
+    <footer id="log-drawer" class="log-drawer">
+      <div class="drawer-header">
+        <div class="tab-selectors">
+          <button class="tab-btn active" data-tab="tab-session">Session Logs</button>
+          <button class="tab-btn" data-tab="tab-engine">Engine Logs</button>
+        </div>
+        <button id="btn-clear-logs" class="btn-small" title="Clear logs">Clear</button>
+      </div>
+      <div class="drawer-content">
+        <div id="tab-session" class="tab-pane active">
+          <pre id="session-log-pre" class="log-output">Initialized Findmore VPN client GUI.<br></pre>
+        </div>
+        <div id="tab-engine" class="tab-pane">
+          <pre id="engine-log-pre" class="log-output"></pre>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+
 </html>

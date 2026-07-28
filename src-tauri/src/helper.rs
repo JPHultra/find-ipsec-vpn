@@ -97,6 +97,11 @@ fn create_pty() -> io::Result<Pty> {
     }
 }
 
+fn extract_bytes_from_line(line: &str) -> Option<u64> {
+    let token = line.trim().split(&['(', ' ', '\t'][..]).next()?;
+    token.trim_matches(|c: char| !c.is_ascii_digit()).parse::<u64>().ok()
+}
+
 fn parse_xfrm_stats(output: &str, gateway_ip: &str) -> (u64, u64) {
     let mut bytes_sent = 0;
     let mut bytes_received = 0;
@@ -122,10 +127,20 @@ fn parse_xfrm_stats(output: &str, gateway_ip: &str) -> (u64, u64) {
         let src_ip = parts[0];
         let dst_ip = parts[2];
         
-        // Outbound SA: destination is VPN gateway IP
-        let is_outbound = dst_ip == gateway_ip;
-        // Inbound SA: source is VPN gateway IP
-        let is_inbound = src_ip == gateway_ip;
+        let has_dir_out = lines.iter().any(|l| *l == "dir out");
+        let has_dir_in = lines.iter().any(|l| *l == "dir in");
+        
+        let is_outbound = if !gateway_ip.is_empty() {
+            dst_ip == gateway_ip || has_dir_out
+        } else {
+            has_dir_out
+        };
+        
+        let is_inbound = if !gateway_ip.is_empty() {
+            src_ip == gateway_ip || has_dir_in
+        } else {
+            has_dir_in
+        };
         
         if !is_outbound && !is_inbound {
             continue;
@@ -133,33 +148,20 @@ fn parse_xfrm_stats(output: &str, gateway_ip: &str) -> (u64, u64) {
         
         for i in 0..lines.len() {
             if lines[i].starts_with("lifetime current:") {
-                let content = lines[i]["lifetime current:".len()..].trim();
-                if !content.is_empty() {
-                    // Same line format: "1540(bytes), 15(packets)"
-                    if let Some(num_str) = content.split('(').next() {
-                        if let Ok(bytes) = num_str.trim().parse::<u64>() {
-                            if is_outbound {
-                                bytes_sent += bytes;
-                            } else {
-                                bytes_received += bytes;
-                            }
-                            continue;
-                        }
-                    }
-                }
+                let rest = lines[i]["lifetime current:".len()..].trim();
+                let bytes_opt = if !rest.is_empty() {
+                    extract_bytes_from_line(rest)
+                } else if i + 1 < lines.len() {
+                    extract_bytes_from_line(lines[i + 1])
+                } else {
+                    None
+                };
                 
-                // Fallback to next line format
-                if i + 1 < lines.len() {
-                    let bytes_line = lines[i + 1].trim();
-                    let words: Vec<&str> = bytes_line.split_whitespace().collect();
-                    if words.len() >= 2 && words[1].starts_with("bytes") {
-                        if let Ok(bytes) = words[0].parse::<u64>() {
-                            if is_outbound {
-                                bytes_sent += bytes;
-                            } else {
-                                bytes_received += bytes;
-                            }
-                        }
+                if let Some(bytes) = bytes_opt {
+                    if is_outbound {
+                        bytes_sent += bytes;
+                    } else if is_inbound {
+                        bytes_received += bytes;
                     }
                 }
             }
