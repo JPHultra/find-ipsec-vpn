@@ -170,6 +170,10 @@ body {
   flex-direction: column;
   width: 100%;
   animation: fadeIn var(--transition-normal);
+  /* Force GPU rendering / compositing layer creation to resolve ghost shadows left behind on transit */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: opacity, transform;
 }
 
 .view-panel.active {

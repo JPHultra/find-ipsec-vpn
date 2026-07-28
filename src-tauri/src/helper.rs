@@ -133,15 +133,14 @@ fn parse_xfrm_stats(output: &str, gateway_ip: &str) -> (u64, u64) {
         
         for i in 0..lines.len() {
             if lines[i].starts_with("lifetime current:") && i + 1 < lines.len() {
-                let bytes_line = lines[i + 1];
-                if let Some(bytes_part) = bytes_line.split("bytes ").nth(1) {
-                    if let Some(num_str) = bytes_part.split(',').next() {
-                        if let Ok(bytes) = num_str.trim().parse::<u64>() {
-                            if is_outbound {
-                                bytes_sent += bytes;
-                            } else {
-                                bytes_received += bytes;
-                            }
+                let bytes_line = lines[i + 1].trim();
+                let words: Vec<&str> = bytes_line.split_whitespace().collect();
+                if words.len() >= 2 && words[1].starts_with("bytes") {
+                    if let Ok(bytes) = words[0].parse::<u64>() {
+                        if is_outbound {
+                            bytes_sent += bytes;
+                        } else {
+                            bytes_received += bytes;
                         }
                     }
                 }
