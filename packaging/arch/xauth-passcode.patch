@@ -1,0 +1,10 @@
+--- a/src/libcharon/plugins/xauth_generic/xauth_generic.c
++++ b/src/libcharon/plugins/xauth_generic/xauth_generic.c
+@@ -84,6 +84,7 @@
+ 							PLV1_CONFIGURATION_ATTRIBUTE, XAUTH_USER_NAME,
+ 							this->peer->get_encoding(this->peer)));
+ 				break;
++			case XAUTH_PASSCODE:
+ 			case XAUTH_NEXT_PIN:
+ 				type = SHARED_PIN;
+ 				/* FALL */

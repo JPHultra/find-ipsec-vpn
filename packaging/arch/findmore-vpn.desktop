@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Findmore VPN
+Comment=Findmore FortiGate IPsec XAuth VPN Client
+Exec=findmore-vpn-gui
+Icon=findmore-vpn
+Terminal=false
+Type=Application
+Categories=Network;VPN;
+Keywords=vpn;fortigate;ipsec;ike;xauth;otp;
+StartupNotify=true
