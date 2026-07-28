@@ -10,7 +10,7 @@ license=('GPL-2.0-only')
 arch=('x86_64')
 makedepends=('libnm' 'systemd' 'ruby' 'ruby-rdoc' 'mariadb' 'python-build' 'python-installer' 'python-setuptools' 'python-wheel')
 depends=('curl' 'gmp' 'iproute2' 'openssl' 'sqlite' 'libcap' 'systemd-libs' 'pam')
-provides=('strongswan')
+provides=("strongswan=${pkgver}")
 conflicts=('strongswan')
 backup=(
   etc/ipsec.conf
