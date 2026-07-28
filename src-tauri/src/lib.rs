@@ -86,16 +86,9 @@ fn delete_secrets_legacy() -> Result<(), String> {
 }
 
 fn create_default_config() -> ProfilesConfig {
-    let default_profile = VpnProfile {
-        id: "default".to_string(),
-        name: "Default Profile".to_string(),
-        host: "".to_string(),
-        remote_identity: "".to_string(),
-        username: "".to_string(),
-    };
     ProfilesConfig {
-        active_profile_id: "default".to_string(),
-        profiles: vec![default_profile],
+        active_profile_id: "".to_string(),
+        profiles: vec![],
     }
 }
 
@@ -295,13 +288,11 @@ fn save_profile(profile: VpnProfile, psk: Option<String>, password: Option<Strin
 fn delete_profile(profile_id: String) -> Result<ProfilesConfig, String> {
     let mut config = load_profiles_config()?;
     
-    if config.profiles.len() <= 1 {
-        return Err("Cannot delete the last remaining profile".to_string());
-    }
-    
     config.profiles.retain(|p| p.id != profile_id);
     
-    if config.active_profile_id == profile_id {
+    if config.profiles.is_empty() {
+        config.active_profile_id = "".to_string();
+    } else if config.active_profile_id == profile_id {
         config.active_profile_id = config.profiles[0].id.clone();
     }
     
@@ -341,6 +332,9 @@ fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), 
     }
 
     let config = load_profiles_config()?;
+    if config.profiles.is_empty() {
+        return Err("No profiles configured. Please create a profile in the Profiles tab first.".to_string());
+    }
     let active_profile = config.profiles.iter().find(|p| p.id == config.active_profile_id)
         .ok_or_else(|| "Active profile not found".to_string())?;
     

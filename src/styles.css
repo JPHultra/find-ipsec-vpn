@@ -822,13 +822,13 @@ body {
 }
 
 .btn-danger {
-  background-color: rgba(244, 63, 94, 0.15);
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  color: #f43f5e;
+  background-color: #e11d48; /* Solid rose/red */
+  border: 1px solid #be123c;
+  color: #ffffff;
 }
 
 .btn-danger:hover {
-  background-color: rgba(244, 63, 94, 0.3);
-  border-color: #f43f5e;
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
+  background-color: #f43f5e;
+  border-color: #e11d48;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.45);
 }

@@ -96,6 +96,51 @@ async function loadProfiles() {
     profiles = config.profiles;
     activeProfileId = config.active_profile_id;
 
+    const btnConnect = document.getElementById('btn-connect');
+
+    if (profiles.length === 0) {
+      // Empty state
+      profileSelector.innerHTML = '<option value="">No Profiles Configured</option>';
+      editorProfileSelector.innerHTML = '<option value="">No Profiles Configured</option>';
+      profileSelector.disabled = true;
+      editorProfileSelector.disabled = true;
+
+      summaryHost.textContent = 'None (Create one in Profiles tab)';
+      summaryUsername.textContent = 'None';
+
+      inputEditProfileName.value = '';
+      inputEditHost.value = '';
+      inputEditRemoteId.value = '';
+      inputEditUsername.value = '';
+      inputEditPsk.value = '';
+      inputEditPassword.value = '';
+      inputEditPsk.placeholder = '••••••••••••••••';
+      inputEditPassword.placeholder = '••••••••••••••••';
+
+      inputEditProfileName.disabled = true;
+      inputEditHost.disabled = true;
+      inputEditRemoteId.disabled = true;
+      inputEditUsername.disabled = true;
+      inputEditPsk.disabled = true;
+      inputEditPassword.disabled = true;
+
+      btnEditorDelete.disabled = true;
+      if (btnConnect) btnConnect.disabled = true;
+      return;
+    }
+
+    // Non-empty state: enable all elements
+    profileSelector.disabled = false;
+    editorProfileSelector.disabled = false;
+    inputEditProfileName.disabled = false;
+    inputEditHost.disabled = false;
+    inputEditRemoteId.disabled = false;
+    inputEditUsername.disabled = false;
+    inputEditPsk.disabled = false;
+    inputEditPassword.disabled = false;
+    btnEditorDelete.disabled = false;
+    if (btnConnect) btnConnect.disabled = false;
+
     // Check if current editorProfileId exists, if not default to active
     if (!profiles.some(p => p.id === editorProfileId)) {
       editorProfileId = activeProfileId;
