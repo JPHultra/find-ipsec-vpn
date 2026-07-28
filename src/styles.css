@@ -721,3 +721,114 @@ body {
   background-color: var(--surface-highlight);
   box-shadow: 0 0 8px rgba(0, 242, 254, 0.1);
 }
+
+/* Navigation Tabs in Header */
+.header-nav {
+  display: flex;
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  gap: 2px;
+}
+
+.nav-tab {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.nav-tab:hover {
+  color: var(--text-main);
+  background-color: var(--surface-highlight);
+}
+
+.nav-tab.active {
+  color: var(--text-main);
+  background-color: var(--surface-border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Summary Card on Connect View */
+.summary-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.summary-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.summary-value {
+  color: var(--text-main);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+/* Profile Manager Header & Layout */
+.profile-manager-header {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.flex-fill {
+  flex: 1;
+}
+
+.btn-new-profile-action {
+  height: 45px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+}
+
+/* Editor Action buttons at the bottom */
+.profile-editor-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.profile-editor-actions button {
+  flex: 1;
+}
+
+.btn-danger {
+  background-color: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #f43f5e;
+}
+
+.btn-danger:hover {
+  background-color: rgba(244, 63, 94, 0.3);
+  border-color: #f43f5e;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
+}

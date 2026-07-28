@@ -24,6 +24,12 @@
             <span class="sub-brand">VPN</span>
           </div>
         </div>
+
+        <div id="app-nav-tabs" class="header-nav">
+          <button id="nav-connect" class="nav-tab active">Connect</button>
+          <button id="nav-profiles" class="nav-tab">Profiles</button>
+        </div>
+
         <div class="app-actions">
           <button id="btn-toggle-logs" title="Toggle logs">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -36,47 +42,25 @@
       <!-- VIEW PANELS CONTAINER -->
       <div class="view-viewport">
         
-        <!-- 1. CONFIGURATION VIEW -->
+        <!-- 1. CONNECT VIEW -->
         <section id="view-config" class="view-panel active">
-          <div class="form-instructions">Configure your FortiGate VPN connection parameters below.</div>
-          <form id="vpn-config-form" class="vpn-form">
+          <div class="form-instructions">Select a connection profile and initiate the VPN.</div>
+          <form id="vpn-connect-form" class="vpn-form">
             <div class="form-group">
-              <label for="profile-selector">VPN Connection Profile</label>
-              <div class="profile-actions-wrapper">
-                <select id="profile-selector" class="profile-dropdown">
-                  <!-- Dynamically populated -->
-                </select>
-                <button type="button" id="btn-new-profile" class="btn-profile-action" title="Create new profile">+</button>
-                <button type="button" id="btn-delete-profile" class="btn-profile-action" title="Delete selected profile">🗑</button>
+              <label for="profile-selector">Select Profile</label>
+              <select id="profile-selector" class="profile-dropdown">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+
+            <div id="profile-summary-card" class="summary-card">
+              <div class="summary-item">
+                <span class="summary-label">Gateway Host:</span>
+                <span id="summary-host" class="summary-value">-</span>
               </div>
-            </div>
-
-            <div class="form-group">
-              <label for="host">VPN Gateway Host / IP</label>
-              <input type="text" id="host" required placeholder="vpn.findmore.pt or 88.157.96.201" value="vpn.findmore.pt" autocomplete="off" />
-            </div>
-
-            <div class="form-group">
-              <label for="remote-identity">Remote Identity (IP)</label>
-              <input type="text" id="remote-identity" placeholder="Optional (resolves automatically)" autocomplete="off" />
-            </div>
-
-            <div class="form-group">
-              <label for="username">Username / Email</label>
-              <input type="text" id="username" required placeholder="username@findmore.pt" autocomplete="off" />
-            </div>
-
-            <div class="form-group">
-              <label for="psk">Pre-Shared Key (PSK)</label>
-              <div class="input-password-wrapper">
-                <input type="password" id="psk" required placeholder="••••••••••••••••" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="password">Account Password</label>
-              <div class="input-password-wrapper">
-                <input type="password" id="password" required placeholder="••••••••••••••••" />
+              <div class="summary-item">
+                <span class="summary-label">Username / Email:</span>
+                <span id="summary-username" class="summary-value">-</span>
               </div>
             </div>
 
@@ -86,6 +70,64 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 00-.74-3.39m-.75-3.21a9.044 9.044 0 00-6.41 2.76M9 10.5a.75.75 0 110-1.5.75.75 0 010 1.5z" />
               </svg>
             </button>
+          </form>
+        </section>
+
+        <!-- 1B. PROFILES MANAGEMENT VIEW -->
+        <section id="view-profiles" class="view-panel">
+          <div class="form-instructions">Create, edit, or delete your VPN connection profiles.</div>
+          
+          <div class="profile-manager-header">
+            <div class="form-group flex-fill">
+              <label for="editor-profile-selector">Select Profile to Edit</label>
+              <select id="editor-profile-selector" class="profile-dropdown">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <button type="button" id="btn-editor-new" class="btn btn-new-profile-action btn-profile-action" title="Create new profile">
+              <span>+ New Profile</span>
+            </button>
+          </div>
+
+          <form id="profile-editor-form" class="vpn-form">
+            <div class="form-group">
+              <label for="edit-profile-name">Profile Name</label>
+              <input type="text" id="edit-profile-name" required placeholder="e.g. Findmore PT" autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+              <label for="edit-host">VPN Gateway Host / IP</label>
+              <input type="text" id="edit-host" required placeholder="vpn.findmore.pt or 88.157.96.201" autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+              <label for="edit-remote-identity">Remote Identity (IP)</label>
+              <input type="text" id="edit-remote-identity" placeholder="Optional (resolves automatically)" autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+              <label for="edit-username">Username / Email</label>
+              <input type="text" id="edit-username" required placeholder="username@findmore.pt" autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+              <label for="edit-psk">Pre-Shared Key (PSK)</label>
+              <div class="input-password-wrapper">
+                <input type="password" id="edit-psk" placeholder="••••••••••••••••" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-password">Account Password</label>
+              <div class="input-password-wrapper">
+                <input type="password" id="edit-password" placeholder="••••••••••••••••" />
+              </div>
+            </div>
+
+            <div class="profile-editor-actions">
+              <button type="button" id="btn-editor-delete" class="btn btn-danger">Delete Profile</button>
+              <button type="submit" id="btn-editor-save" class="btn btn-primary">Save Profile</button>
+            </div>
           </form>
         </section>
 

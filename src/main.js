@@ -2,9 +2,9 @@ const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
 
 // DOM Elements
-let viewConfig, viewConnecting, viewOtp, viewConnected;
-let formConfig, formOtp;
-let inputHost, inputRemoteId, inputUsername, inputPsk, inputPassword, inputOtp;
+let viewConfig, viewProfiles, viewConnecting, viewOtp, viewConnected;
+let formConnect, formEditor, formOtp;
+let inputOtp;
 let connectingMessage, uptimeCounter;
 let statVpnIp, statGateway, statGatewayIp, statProtocol;
 let trafficReceived, trafficSent;
@@ -12,13 +12,21 @@ let sessionLogPre, engineLogPre;
 let btnToggleLogs, btnClearLogs, logDrawer;
 let tabs, tabPanes;
 
-// Profiles DOM Elements
-let profileSelector, btnNewProfile, btnDeleteProfile;
+// Navigation elements
+let appNavTabs, navConnect, navProfiles;
+
+// Connect view elements
+let profileSelector, summaryHost, summaryUsername;
+
+// Profiles Editor view elements
+let editorProfileSelector, btnEditorNew, btnEditorDelete;
+let inputEditProfileName, inputEditHost, inputEditRemoteId, inputEditUsername, inputEditPsk, inputEditPassword;
 
 // State helper variables
 let unlistenVpnEvent = null;
 let profiles = [];
 let activeProfileId = 'default';
+let editorProfileId = 'default';
 
 // Helpers to format metrics
 function formatBytes(bytes) {
@@ -43,10 +51,27 @@ function formatSeconds(secs) {
 
 // UI Panel transition helper
 function showPanel(panel) {
-  [viewConfig, viewConnecting, viewOtp, viewConnected].forEach(p => {
+  // Hide all main panels
+  [viewConfig, viewProfiles, viewConnecting, viewOtp, viewConnected].forEach(p => {
     if (p) p.classList.remove('active');
   });
   panel.classList.add('active');
+
+  // Manage header navigation visibility
+  if (panel === viewConfig || panel === viewProfiles) {
+    appNavTabs.style.display = 'flex';
+    // Sync tab button active states
+    if (panel === viewConfig) {
+      navConnect.classList.add('active');
+      navProfiles.classList.remove('active');
+    } else {
+      navProfiles.classList.add('active');
+      navConnect.classList.remove('active');
+    }
+  } else {
+    // Hide navigation bar during active connection transitions/connections
+    appNavTabs.style.display = 'none';
+  }
 }
 
 // Append messages to logger drawer
@@ -71,43 +96,64 @@ async function loadProfiles() {
     profiles = config.profiles;
     activeProfileId = config.active_profile_id;
 
-    // Repopulate select dropdown
-    profileSelector.innerHTML = '';
-    profiles.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = p.name;
-      profileSelector.appendChild(opt);
-    });
-    profileSelector.value = activeProfileId;
+    // Check if current editorProfileId exists, if not default to active
+    if (!profiles.some(p => p.id === editorProfileId)) {
+      editorProfileId = activeProfileId;
+    }
 
-    // Load active profile data
+    // Populate Connect view dropdown
+    profileSelector.innerHTML = '';
+    // Populate Profiles Editor view dropdown
+    editorProfileSelector.innerHTML = '';
+
+    profiles.forEach(p => {
+      // Option for connect view selector
+      const optConnect = document.createElement('option');
+      optConnect.value = p.id;
+      optConnect.textContent = p.name;
+      profileSelector.appendChild(optConnect);
+
+      // Option for editor view selector
+      const optEdit = document.createElement('option');
+      optEdit.value = p.id;
+      optEdit.textContent = p.name;
+      editorProfileSelector.appendChild(optEdit);
+    });
+
+    profileSelector.value = activeProfileId;
+    editorProfileSelector.value = editorProfileId;
+
+    // Update Connect View Summary Card
     const activeProfile = profiles.find(p => p.id === activeProfileId);
     if (activeProfile) {
-      inputHost.value = activeProfile.host || '';
-      inputRemoteId.value = activeProfile.remote_identity || '';
-      inputUsername.value = activeProfile.username || '';
+      summaryHost.textContent = activeProfile.host || 'Not Configured';
+      summaryUsername.textContent = activeProfile.username || 'Not Configured';
+    }
 
-      // Clear password values for safety when switching profiles
-      inputPsk.value = '';
-      inputPassword.value = '';
+    // Update Profile Editor View inputs
+    const editProfile = profiles.find(p => p.id === editorProfileId);
+    if (editProfile) {
+      inputEditProfileName.value = editProfile.name || '';
+      inputEditHost.value = editProfile.host || '';
+      inputEditRemoteId.value = editProfile.remote_identity || '';
+      inputEditUsername.value = editProfile.username || '';
+
+      // Clear password values for safety when loading profile in editor
+      inputEditPsk.value = '';
+      inputEditPassword.value = '';
 
       // Check key storage secrets status for placeholders
-      const status = await invoke('get_profile_secrets_status', { profileId: activeProfileId });
+      const status = await invoke('get_profile_secrets_status', { profileId: editorProfileId });
       if (status.has_psk) {
-        inputPsk.placeholder = '•••••••••••••••• (Saved)';
-        inputPsk.removeAttribute('required');
+        inputEditPsk.placeholder = '•••••••••••••••• (Saved)';
       } else {
-        inputPsk.placeholder = '••••••••••••••••';
-        inputPsk.setAttribute('required', 'true');
+        inputEditPsk.placeholder = '••••••••••••••••';
       }
 
       if (status.has_password) {
-        inputPassword.placeholder = '•••••••••••••••• (Saved)';
-        inputPassword.removeAttribute('required');
+        inputEditPassword.placeholder = '•••••••••••••••• (Saved)';
       } else {
-        inputPassword.placeholder = '••••••••••••••••';
-        inputPassword.setAttribute('required', 'true');
+        inputEditPassword.placeholder = '••••••••••••••••';
       }
     }
   } catch (err) {
@@ -115,30 +161,35 @@ async function loadProfiles() {
   }
 }
 
-// Save active profile parameters to disk and keyring
-async function saveConfigData() {
-  const activeProfile = profiles.find(p => p.id === activeProfileId);
-  if (!activeProfile) {
-    appendSessionLog('No active profile to save configuration settings.', true);
+// Save profile changes from Editor form
+async function saveEditorProfile(e) {
+  e.preventDefault();
+  const activeEditProfile = profiles.find(p => p.id === editorProfileId);
+  if (!activeEditProfile) {
+    appendSessionLog('No profile selected to edit.', true);
     return;
   }
 
-  activeProfile.host = inputHost.value.trim();
-  activeProfile.remote_identity = inputRemoteId.value.trim();
-  activeProfile.username = inputUsername.value.trim();
-  const psk = inputPsk.value;
-  const password = inputPassword.value;
+  activeEditProfile.name = inputEditProfileName.value.trim();
+  activeEditProfile.host = inputEditHost.value.trim();
+  activeEditProfile.remote_identity = inputEditRemoteId.value.trim();
+  activeEditProfile.username = inputEditUsername.value.trim();
+  const psk = inputEditPsk.value;
+  const password = inputEditPassword.value;
 
   try {
     await invoke('save_profile', {
-      profile: activeProfile,
+      profile: activeEditProfile,
       psk: psk ? psk : null,
       password: password ? password : null
     });
-    appendSessionLog(`Profile "${activeProfile.name}" updated successfully.`);
+    appendSessionLog(`Profile "${activeEditProfile.name}" saved successfully.`);
+    // Make saved profile active and reload
+    activeProfileId = activeEditProfile.id;
+    await invoke('set_active_profile', { profileId: activeProfileId });
     await loadProfiles();
   } catch (err) {
-    appendSessionLog(`Failed to save configuration: ${err}`, true);
+    appendSessionLog(`Failed to save profile: ${err}`, true);
   }
 }
 
@@ -146,24 +197,37 @@ async function saveConfigData() {
 window.addEventListener('DOMContentLoaded', async () => {
   // Bind views
   viewConfig = document.getElementById('view-config');
+  viewProfiles = document.getElementById('view-profiles');
   viewConnecting = document.getElementById('view-connecting');
   viewOtp = document.getElementById('view-otp');
   viewConnected = document.getElementById('view-connected');
 
+  // Bind navigation tabs
+  appNavTabs = document.getElementById('app-nav-tabs');
+  navConnect = document.getElementById('nav-connect');
+  navProfiles = document.getElementById('nav-profiles');
+
   // Bind forms and inputs
-  formConfig = document.getElementById('vpn-config-form');
+  formConnect = document.getElementById('vpn-connect-form');
+  formEditor = document.getElementById('profile-editor-form');
   formOtp = document.getElementById('otp-form');
-  inputHost = document.getElementById('host');
-  inputRemoteId = document.getElementById('remote-identity');
-  inputUsername = document.getElementById('username');
-  inputPsk = document.getElementById('psk');
-  inputPassword = document.getElementById('password');
   inputOtp = document.getElementById('otp-code');
 
-  // Bind profiles inputs
+  // Bind Connect View fields
   profileSelector = document.getElementById('profile-selector');
-  btnNewProfile = document.getElementById('btn-new-profile');
-  btnDeleteProfile = document.getElementById('btn-delete-profile');
+  summaryHost = document.getElementById('summary-host');
+  summaryUsername = document.getElementById('summary-username');
+
+  // Bind Editor View fields
+  editorProfileSelector = document.getElementById('editor-profile-selector');
+  btnEditorNew = document.getElementById('btn-editor-new');
+  btnEditorDelete = document.getElementById('btn-editor-delete');
+  inputEditProfileName = document.getElementById('edit-profile-name');
+  inputEditHost = document.getElementById('edit-host');
+  inputEditRemoteId = document.getElementById('edit-remote-identity');
+  inputEditUsername = document.getElementById('edit-username');
+  inputEditPsk = document.getElementById('edit-psk');
+  inputEditPassword = document.getElementById('edit-password');
 
   // Bind status/metric elements
   connectingMessage = document.getElementById('connecting-message');
@@ -185,20 +249,37 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Load profiles list and data
   await loadProfiles();
 
-  // Profile Selector Change Handler
+  // Navigation Tab Handlers
+  navConnect.addEventListener('click', () => {
+    showPanel(viewConfig);
+  });
+
+  navProfiles.addEventListener('click', () => {
+    editorProfileId = activeProfileId; // Default to active profile when editing
+    showPanel(viewProfiles);
+    loadProfiles();
+  });
+
+  // Connect View Profile Selector change
   profileSelector.addEventListener('change', async (e) => {
     const selectedId = e.target.value;
     try {
       await invoke('set_active_profile', { profileId: selectedId });
       await loadProfiles();
-      appendSessionLog(`Switched active profile.`);
+      appendSessionLog(`Active profile changed.`);
     } catch (err) {
-      appendSessionLog(`Failed to change profile: ${err}`, true);
+      appendSessionLog(`Failed to change active profile: ${err}`, true);
     }
   });
 
-  // Create New Profile Button Handler
-  btnNewProfile.addEventListener('click', async () => {
+  // Editor View Profile Selector change
+  editorProfileSelector.addEventListener('change', async (e) => {
+    editorProfileId = e.target.value;
+    await loadProfiles();
+  });
+
+  // Create New Profile Button Handler (inside Editor Header)
+  btnEditorNew.addEventListener('click', async () => {
     const name = prompt("Enter a name for the new profile:");
     if (name && name.trim()) {
       const newProfile = {
@@ -210,6 +291,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       };
       try {
         await invoke('save_profile', { profile: newProfile, psk: '', password: '' });
+        editorProfileId = newProfile.id;
         await loadProfiles();
         appendSessionLog(`Created new profile: "${newProfile.name}".`);
       } catch (err) {
@@ -218,31 +300,34 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Delete Selected Profile Button Handler
-  btnDeleteProfile.addEventListener('click', async () => {
-    const activeProfile = profiles.find(p => p.id === activeProfileId);
-    if (!activeProfile) return;
+  // Delete Profile Button Handler (inside Editor Actions)
+  btnEditorDelete.addEventListener('click', async () => {
+    const activeEditProfile = profiles.find(p => p.id === editorProfileId);
+    if (!activeEditProfile) return;
 
     if (profiles.length <= 1) {
       alert("Cannot delete the last remaining profile.");
       return;
     }
 
-    if (confirm(`Are you sure you want to delete the profile "${activeProfile.name}"?`)) {
+    if (confirm(`Are you sure you want to delete the profile "${activeEditProfile.name}"?`)) {
       try {
-        await invoke('delete_profile', { profileId: activeProfileId });
+        const config = await invoke('delete_profile', { profileId: editorProfileId });
+        editorProfileId = config.active_profile_id;
         await loadProfiles();
-        appendSessionLog(`Deleted profile "${activeProfile.name}".`);
+        appendSessionLog(`Deleted profile "${activeEditProfile.name}".`);
       } catch (err) {
         appendSessionLog(`Failed to delete profile: ${err}`, true);
       }
     }
   });
 
+  // Save Profile Form Submission
+  formEditor.addEventListener('submit', saveEditorProfile);
+
   // Handle configuration connect submission
-  formConfig.addEventListener('submit', async (e) => {
+  formConnect.addEventListener('submit', async (e) => {
     e.preventDefault();
-    await saveConfigData();
     
     // Switch to connecting view
     showPanel(viewConnecting);
