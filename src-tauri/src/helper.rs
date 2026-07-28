@@ -172,7 +172,7 @@ fn parse_xfrm_stats(output: &str, gateway_ip: &str) -> (u64, u64) {
 struct VpnConnection {
     child: Child,
     _master: File,
-    gateway_ip: String,
+    gateway_ip: Arc<Mutex<String>>,
     state: Arc<Mutex<String>>,
 }
 
@@ -316,6 +316,8 @@ fn main() {
                     };
                     
                     let state = Arc::new(Mutex::new("Connecting".to_string()));
+                    let gateway_ip = Arc::new(Mutex::new(remote_id));
+                    let gateway_ip_clone = Arc::clone(&gateway_ip);
                     let pty_master_clone = match pty.master.try_clone() {
                         Ok(c) => c,
                         Err(e) => {
@@ -370,6 +372,30 @@ fn main() {
                                             send_msg(&HelperMessage::Log { message: format!("Parsed virtual IP: {}", ip) });
                                         }
                                     }
+
+                                    // Parse for active tunnel Gateway IP
+                                    if trimmed.contains(" initiating ") && trimmed.contains(" IKE_SA ") {
+                                        if let Some(to_idx) = trimmed.rfind(" to ") {
+                                            let ip_part = trimmed[to_idx + " to ".len()..].trim();
+                                            let ip = ip_part.split_whitespace().next().unwrap_or("").trim_matches(|c| c == '[' || c == ']').to_string();
+                                            if !ip.is_empty() {
+                                                let mut gw = gateway_ip_clone.lock().unwrap();
+                                                *gw = ip.clone();
+                                                send_msg(&HelperMessage::Log { message: format!("Parsed active tunnel Gateway IP: {}", ip) });
+                                            }
+                                        }
+                                    }
+
+                                    // Parse for credential & authentication failure messages
+                                    if trimmed.contains("AUTHENTICATION_FAILED") || trimmed.contains("invalid preshared key") || trimmed.contains("XAuth authentication failed") || trimmed.contains("no secret found for") {
+                                        send_msg(&HelperMessage::Error {
+                                            message: "Authentication Failed: Invalid Pre-Shared Key (PSK) or Password.".to_string(),
+                                        });
+                                    } else if trimmed.contains("NO_PROPOSAL_CHOSEN") {
+                                        send_msg(&HelperMessage::Error {
+                                            message: "IPsec Proposal Mismatch: The gateway rejected the encryption proposals.".to_string(),
+                                        });
+                                    }
                                 }
                             }
                             
@@ -392,17 +418,17 @@ fn main() {
                                 *state_clone.lock().unwrap() = "Authenticating".to_string();
                                 send_msg(&HelperMessage::Status {
                                     state: "Authenticating".to_string(),
-                                    message: "Sending XAuth password...".to_string(),
+                                    message: "Sending account password...".to_string(),
                                 });
-                            } else if current_str.ends_with("PIN: ") {
+                            } else if current_str.contains("Verification code:") || current_str.contains("OTP:") || current_str.contains("Enter OTP:") {
                                 buffer.clear();
                                 *state_clone.lock().unwrap() = "WaitingForOtp".to_string();
                                 send_msg(&HelperMessage::Status {
                                     state: "WaitingForOtp".to_string(),
-                                    message: "FortiGate challenges for separate Email Verification Code".to_string(),
+                                    message: "Two-Factor Security Code Required".to_string(),
                                 });
                                 
-                                // Block waiting for the OTP code from the GUI
+                                // Block waiting for frontend OTP submission
                                 if let Ok(otp_code) = rx_otp_sess.recv() {
                                     let _ = reader.write_all(format!("{}\n", otp_code).as_bytes());
                                     let _ = reader.flush();
@@ -425,7 +451,7 @@ fn main() {
                     current_conn = Some(VpnConnection {
                         child,
                         _master: pty.master,
-                        gateway_ip: remote_id,
+                        gateway_ip,
                         state,
                     });
                 }
@@ -454,6 +480,10 @@ fn main() {
             let state = {
                 let s = conn.state.lock().unwrap();
                 s.clone()
+            };
+            let active_gw_ip = {
+                let gw = conn.gateway_ip.lock().unwrap();
+                gw.clone()
             };
             
             // Check if process has died unexpectedly
@@ -491,10 +521,10 @@ fn main() {
                 let stdout_str = String::from_utf8_lossy(&out.stdout);
                 
                 // Parse stats
-                let (sent, recv) = parse_xfrm_stats(&stdout_str, &conn.gateway_ip);
+                let (sent, recv) = parse_xfrm_stats(&stdout_str, &active_gw_ip);
                 
                 // Check if any policy exists for our gateway to declare "Connected"
-                let has_sa = stdout_str.contains(&conn.gateway_ip);
+                let has_sa = stdout_str.contains(&active_gw_ip);
                 
                 if has_sa {
                     // Get current parsed VPN IP from thread-safe state
@@ -531,7 +561,7 @@ fn main() {
                             
                             send_msg(&HelperMessage::TunnelInfo {
                                 vpn_ip: ip.clone(),
-                                gateway_ip: conn.gateway_ip.clone(),
+                                gateway_ip: active_gw_ip.clone(),
                                 protocol: "IPsec ESP / NAT-T".to_string(),
                                 encryption: "AES_CBC_128 / SHA256".to_string(),
                             });

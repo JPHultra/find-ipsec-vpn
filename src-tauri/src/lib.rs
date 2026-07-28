@@ -150,32 +150,15 @@ fn save_profiles_config(config: &ProfilesConfig) -> Result<(), String> {
 
 fn save_secrets(profile_id: &str, psk: &str, password: &str) -> Result<(), String> {
     // 1. Try system keyring
-    let keyring_ok = (|| {
+    let _ = (|| {
         let entry_psk = keyring::Entry::new("findmore-vpn", &format!("psk-{}", profile_id))?;
         entry_psk.set_password(psk)?;
         let entry_pwd = keyring::Entry::new("findmore-vpn", &format!("password-{}", profile_id))?;
         entry_pwd.set_password(password)?;
         Ok::<(), keyring::Error>(())
-    })().is_ok();
+    })();
 
-    if keyring_ok {
-        // If keyring worked, clean fallback in secrets.json if exists
-        let path = get_config_dir().join("secrets.json");
-        if path.exists() {
-            if let Ok(file) = File::open(&path) {
-                if let Ok(mut secrets_map) = serde_json::from_reader::<_, HashMap<String, SecretsStore>>(file) {
-                    if secrets_map.remove(profile_id).is_some() {
-                        if let Ok(writer_file) = File::create(&path) {
-                            let _ = serde_json::to_writer(writer_file, &secrets_map);
-                        }
-                    }
-                }
-            }
-        }
-        return Ok(());
-    }
-
-    // 2. Fallback to owner-only readable secrets.json (0600)
+    // 2. Always persist restricted fallback file secrets.json (0600 mode) for reboot persistence
     let dir = get_config_dir();
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = dir.join("secrets.json");

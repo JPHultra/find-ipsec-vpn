@@ -12,8 +12,9 @@ let sessionLogPre, engineLogPre;
 let btnToggleLogs, btnClearLogs, logDrawer;
 let tabs, tabPanes;
 
-// Navigation elements
+// Navigation & Error elements
 let appNavTabs, navConnect, navProfiles;
+let configErrorBanner;
 
 // Connect view elements
 let profileSelector, summaryHost, summaryUsername;
@@ -47,6 +48,21 @@ function formatSeconds(secs) {
     minutes.toString().padStart(2, '0'),
     seconds.toString().padStart(2, '0')
   ].join(':');
+}
+
+// Error Banner Display Helpers
+function showErrorBanner(message) {
+  if (configErrorBanner) {
+    configErrorBanner.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg><span>${message}</span>`;
+    configErrorBanner.classList.remove('hidden');
+  }
+}
+
+function hideErrorBanner() {
+  if (configErrorBanner) {
+    configErrorBanner.classList.add('hidden');
+    configErrorBanner.innerHTML = '';
+  }
 }
 
 // UI Panel transition helper
@@ -209,6 +225,7 @@ async function loadProfiles() {
 // Save profile changes from Editor form
 async function saveEditorProfile(e) {
   e.preventDefault();
+  hideErrorBanner();
   const activeEditProfile = profiles.find(p => p.id === editorProfileId);
   if (!activeEditProfile) {
     appendSessionLog('No profile selected to edit.', true);
@@ -234,6 +251,7 @@ async function saveEditorProfile(e) {
     await invoke('set_active_profile', { profileId: activeProfileId });
     await loadProfiles();
   } catch (err) {
+    showErrorBanner(`Failed to save profile: ${err}`);
     appendSessionLog(`Failed to save profile: ${err}`, true);
   }
 }
@@ -246,6 +264,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   viewConnecting = document.getElementById('view-connecting');
   viewOtp = document.getElementById('view-otp');
   viewConnected = document.getElementById('view-connected');
+
+  // Bind error banner
+  configErrorBanner = document.getElementById('config-error-banner');
 
   // Bind navigation tabs
   appNavTabs = document.getElementById('app-nav-tabs');
@@ -291,40 +312,63 @@ window.addEventListener('DOMContentLoaded', async () => {
   btnClearLogs = document.getElementById('btn-clear-logs');
   logDrawer = document.getElementById('log-drawer');
 
+  // Bind password eye toggle buttons
+  document.querySelectorAll('.btn-toggle-password').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-for');
+      const input = document.getElementById(targetId);
+      if (!input) return;
+
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+
+      const eyeOpen = `<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />`;
+      const eyeClosed = `<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />`;
+
+      const svg = btn.querySelector('svg');
+      if (svg) svg.innerHTML = isPassword ? eyeClosed : eyeOpen;
+    });
+  });
+
   // Load profiles list and data
   await loadProfiles();
 
   // Navigation Tab Handlers
   navConnect.addEventListener('click', () => {
+    hideErrorBanner();
     showPanel(viewConfig);
   });
 
   navProfiles.addEventListener('click', () => {
-    editorProfileId = activeProfileId; // Default to active profile when editing
+    hideErrorBanner();
+    editorProfileId = activeProfileId;
     showPanel(viewProfiles);
     loadProfiles();
   });
 
   // Connect View Profile Selector change
   profileSelector.addEventListener('change', async (e) => {
+    hideErrorBanner();
     const selectedId = e.target.value;
     try {
       await invoke('set_active_profile', { profileId: selectedId });
       await loadProfiles();
       appendSessionLog(`Active profile changed.`);
     } catch (err) {
-      appendSessionLog(`Failed to change active profile: ${err}`, true);
+      showErrorBanner(`Failed to change active profile: ${err}`);
     }
   });
 
   // Editor View Profile Selector change
   editorProfileSelector.addEventListener('change', async (e) => {
+    hideErrorBanner();
     editorProfileId = e.target.value;
     await loadProfiles();
   });
 
   // Create New Profile Button Handler (inside Editor Header)
   btnEditorNew.addEventListener('click', async () => {
+    hideErrorBanner();
     const name = prompt("Enter a name for the new profile:");
     if (name && name.trim()) {
       const newProfile = {
@@ -340,20 +384,16 @@ window.addEventListener('DOMContentLoaded', async () => {
         await loadProfiles();
         appendSessionLog(`Created new profile: "${newProfile.name}".`);
       } catch (err) {
-        appendSessionLog(`Failed to create profile: ${err}`, true);
+        showErrorBanner(`Failed to create profile: ${err}`);
       }
     }
   });
 
   // Delete Profile Button Handler (inside Editor Actions)
   btnEditorDelete.addEventListener('click', async () => {
+    hideErrorBanner();
     const activeEditProfile = profiles.find(p => p.id === editorProfileId);
     if (!activeEditProfile) return;
-
-    if (profiles.length <= 1) {
-      alert("Cannot delete the last remaining profile.");
-      return;
-    }
 
     if (confirm(`Are you sure you want to delete the profile "${activeEditProfile.name}"?`)) {
       try {
@@ -362,7 +402,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         await loadProfiles();
         appendSessionLog(`Deleted profile "${activeEditProfile.name}".`);
       } catch (err) {
-        appendSessionLog(`Failed to delete profile: ${err}`, true);
+        showErrorBanner(`Failed to delete profile: ${err}`);
       }
     }
   });
@@ -373,7 +413,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Handle configuration connect submission
   formConnect.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+    hideErrorBanner();
+
     // Switch to connecting view
     showPanel(viewConnecting);
     connectingMessage.textContent = 'Launching privileged tunnel helper...';
@@ -383,6 +424,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       await invoke('connect_vpn');
     } catch (err) {
       showPanel(viewConfig);
+      showErrorBanner(`Connection Failed: ${err}`);
       appendSessionLog(`Elevated connection initiation failed: ${err}`, true);
     }
   });
@@ -450,14 +492,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Setup Tauri global listener to receive helper events
   unlistenVpnEvent = await listen('vpn-event', (event) => {
     const rawData = event.payload;
-    
+
     try {
       const msg = JSON.parse(rawData);
-      
+
       switch (msg.type) {
         case 'Status':
           appendSessionLog(msg.message);
-          
+
           if (msg.state === 'Resolving' || msg.state === 'Connecting' || msg.state === 'EstablishingTunnel') {
             showPanel(viewConnecting);
             connectingMessage.textContent = msg.message;
@@ -492,6 +534,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         case 'Error':
           appendSessionLog(`Helper Error: ${msg.message}`, true);
+          showPanel(viewConfig);
+          showErrorBanner(msg.message);
           break;
       }
     } catch (err) {
