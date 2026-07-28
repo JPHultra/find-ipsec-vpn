@@ -159,6 +159,27 @@ struct VpnConnection {
     state: Arc<Mutex<String>>,
 }
 
+fn gracefully_kill_child(mut child: Child) {
+    let pid = child.id() as libc::pid_t;
+    // Send SIGINT to let strongSwan clean up DNS and routing policies
+    unsafe {
+        libc::kill(pid, libc::SIGINT);
+    }
+    
+    // Wait for it to exit with a timeout
+    let start = Instant::now();
+    while start.elapsed() < Duration::from_millis(1500) {
+        if let Ok(Some(_)) = child.try_wait() {
+            return;
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    
+    // Fallback to SIGKILL if it refuses to exit
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
 fn main() {
     let (tx_cmd, rx_cmd) = channel::<GuiCommand>();
     
@@ -399,17 +420,14 @@ fn main() {
                 }
                 
                 GuiCommand::Disconnect => {
-                    current_tx_otp = None;
-                    if let Some(mut conn) = current_conn.take() {
+                    if let Some(conn) = current_conn.take() {
                         send_msg(&HelperMessage::Status {
                             state: "Disconnected".to_string(),
                             message: "Disconnecting VPN...".to_string(),
                         });
-                        let _ = conn.child.kill();
-                        let _ = conn.child.wait();
+                        gracefully_kill_child(conn.child);
                     }
-                    *vpn_ip.lock().unwrap() = None;
-                    connect_time = None;
+                    std::process::exit(0);
                 }
             }
         }
@@ -531,12 +549,10 @@ fn main() {
                     state: "Disconnected".to_string(),
                     message: "IPsec security association lost".to_string(),
                 });
-                let _ = conn.child.kill();
-                let _ = conn.child.wait();
-                current_conn = None;
-                *vpn_ip.lock().unwrap() = None;
-                connect_time = None;
-                current_tx_otp = None;
+                if let Some(conn) = current_conn.take() {
+                    gracefully_kill_child(conn.child);
+                }
+                std::process::exit(0);
             }
         }
         

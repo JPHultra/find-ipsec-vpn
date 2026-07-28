@@ -258,6 +258,8 @@ fn disconnect_vpn(state: State<'_, VpnState>) -> Result<(), String> {
     *stdin_lock = None;
 
     if let Some(mut child) = proc_lock.take() {
+        // Give the helper 500ms to receive command, kill charon-cmd gracefully, and exit
+        std::thread::sleep(std::time::Duration::from_millis(500));
         let _ = child.kill();
         let _ = child.wait();
     }
