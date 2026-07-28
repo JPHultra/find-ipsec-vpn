@@ -181,7 +181,7 @@ fn main() {
     });
 
     let mut current_conn: Option<VpnConnection> = None;
-    let mut vpn_ip: Option<String> = None;
+    let vpn_ip = Arc::new(Mutex::new(None::<String>));
     let mut connect_time: Option<Instant> = None;
     
     // Active session OTP channel sender
@@ -291,8 +291,9 @@ fn main() {
                     
                     let state_clone = Arc::clone(&state);
                     
-                    vpn_ip = None;
+                    *vpn_ip.lock().unwrap() = None;
                     connect_time = None;
+                    let vpn_ip_clone = Arc::clone(&vpn_ip);
                     
                     // Master PTY reader thread
                     thread::spawn(move || {
@@ -325,6 +326,8 @@ fn main() {
                                         let vip_part = &trimmed[vip_pos + "installing new virtual IP ".len()..];
                                         let ip = vip_part.split_whitespace().next().unwrap_or("").to_string();
                                         if !ip.is_empty() {
+                                            let mut vip = vpn_ip_clone.lock().unwrap();
+                                            *vip = Some(ip.clone());
                                             // Send event that we parsed the IP
                                             send_msg(&HelperMessage::Log { message: format!("Parsed virtual IP: {}", ip) });
                                         }
@@ -405,7 +408,7 @@ fn main() {
                         let _ = conn.child.kill();
                         let _ = conn.child.wait();
                     }
-                    vpn_ip = None;
+                    *vpn_ip.lock().unwrap() = None;
                     connect_time = None;
                 }
             }
@@ -425,7 +428,7 @@ fn main() {
                         message: format!("charon-cmd exited with status: {}", status),
                     });
                     current_conn = None;
-                    vpn_ip = None;
+                    *vpn_ip.lock().unwrap() = None;
                     connect_time = None;
                     current_tx_otp = None;
                     send_msg(&HelperMessage::Status {
@@ -459,34 +462,54 @@ fn main() {
                 let has_sa = stdout_str.contains(&conn.gateway_ip);
                 
                 if has_sa {
+                    // Get current parsed VPN IP from thread-safe state
+                    let current_vpn_ip = {
+                        let vip = vpn_ip.lock().unwrap();
+                        vip.clone()
+                    };
+
                     // Try to parse virtual IP if not found yet
-                    if vpn_ip.is_none() {
-                        // We can extract virtual IP from xfrm state sel src
-                        // e.g. "sel src 10.7.1.11/32 dst 0.0.0.0/0"
-                        if let Some(sel_src_idx) = stdout_str.find("sel src ") {
-                            let sub = &stdout_str[sel_src_idx + "sel src ".len()..];
-                            if let Some(ip_only) = sub.split('/').next() {
-                                let ip = ip_only.trim().to_string();
-                                if !ip.is_empty() && ip != "0.0.0.0" {
-                                    vpn_ip = Some(ip.clone());
-                                    connect_time = Some(Instant::now());
-                                    
-                                    send_msg(&HelperMessage::TunnelInfo {
-                                        vpn_ip: ip,
-                                        gateway_ip: conn.gateway_ip.clone(),
-                                        protocol: "IPsec ESP / NAT-T".to_string(),
-                                        encryption: "AES_CBC_128 / SHA256".to_string(),
-                                    });
-                                    
-                                    send_msg(&HelperMessage::Status {
-                                        state: "Connected".to_string(),
-                                        message: "VPN connection successfully established!".to_string(),
-                                    });
+                    let parsed_ip = if current_vpn_ip.is_none() {
+                        let mut found_ip = None;
+                        for line in stdout_str.lines() {
+                            if let Some(sel_src_idx) = line.find("sel src ") {
+                                let sub = &line[sel_src_idx + "sel src ".len()..];
+                                if let Some(ip_only) = sub.split('/').next() {
+                                    let ip = ip_only.trim().to_string();
+                                    if !ip.is_empty() && ip != "0.0.0.0" {
+                                        found_ip = Some(ip);
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        found_ip
+                    } else {
+                        current_vpn_ip
+                    };
+
+                    if let Some(ip) = parsed_ip {
+                        if state != "Connected" {
+                            let mut current_state = conn.state.lock().unwrap();
+                            *current_state = "Connected".to_string();
+                            connect_time = Some(Instant::now());
+                            
+                            send_msg(&HelperMessage::TunnelInfo {
+                                vpn_ip: ip.clone(),
+                                gateway_ip: conn.gateway_ip.clone(),
+                                protocol: "IPsec ESP / NAT-T".to_string(),
+                                encryption: "AES_CBC_128 / SHA256".to_string(),
+                            });
+                            
+                            send_msg(&HelperMessage::Status {
+                                state: "Connected".to_string(),
+                                message: "VPN connection successfully established!".to_string(),
+                            });
+                            
+                            let mut vip = vpn_ip.lock().unwrap();
+                            *vip = Some(ip);
+                        }
                     }
-                    
                     if let Some(time) = connect_time {
                         send_msg(&HelperMessage::Stats {
                             bytes_sent: sent,
@@ -511,7 +534,7 @@ fn main() {
                 let _ = conn.child.kill();
                 let _ = conn.child.wait();
                 current_conn = None;
-                vpn_ip = None;
+                *vpn_ip.lock().unwrap() = None;
                 connect_time = None;
                 current_tx_otp = None;
             }
