@@ -464,10 +464,10 @@ fn show_notification(app: AppHandle, title: String, body: String) -> Result<(), 
 #[tauri::command]
 fn update_tray_status(state: State<'_, VpnState>, status: String, traffic: String) -> Result<(), String> {
     if let Some(ref status_item) = *state.status_item.lock().unwrap() {
-        let _ = status_item.set_text(format!("Status: {}", status));
+        let _ = status_item.set_text(status);
     }
     if let Some(ref traffic_item) = *state.traffic_item.lock().unwrap() {
-        let _ = traffic_item.set_text(format!("Traffic: {}", traffic));
+        let _ = traffic_item.set_text(traffic);
     }
     Ok(())
 }
@@ -475,7 +475,7 @@ fn update_tray_status(state: State<'_, VpnState>, status: String, traffic: Strin
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::{
-        menu::{Menu, MenuItem, PredefinedMenuItem},
+        menu::{Menu, MenuItem},
         tray::TrayIconBuilder,
         Manager, WindowEvent,
     };
@@ -514,17 +514,15 @@ pub fn run() {
             update_tray_status
         ])
         .setup(move |app| {
-            let status_i = MenuItem::with_id(app, "status_info", "Status: Disconnected", false, None::<&str>)?;
-            let traffic_i = MenuItem::with_id(app, "traffic_info", "Traffic: 0.00 MB ↓ / 0.00 MB ↑", false, None::<&str>)?;
-            let sep_i = PredefinedMenuItem::separator(app)?;
-            let show_i = MenuItem::with_id(app, "show", "Show Dashboard", true, None::<&str>)?;
-            let hide_i = MenuItem::with_id(app, "hide", "Hide to Tray", true, None::<&str>)?;
-            let quit_i = MenuItem::with_id(app, "quit", "Quit Findmore VPN", true, None::<&str>)?;
+            let status_i = MenuItem::with_id(app, "status_info", "🔴  Status: Disconnected", false, None::<&str>)?;
+            let traffic_i = MenuItem::with_id(app, "traffic_info", "📊  Traffic: 0.00 MB ↓  •  0.00 MB ↑", false, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", "🖥️   Open Dashboard", true, None::<&str>)?;
+            let hide_i = MenuItem::with_id(app, "hide", "📥   Hide to System Tray", true, None::<&str>)?;
+            let quit_i = MenuItem::with_id(app, "quit", "❌   Quit Findmore VPN", true, None::<&str>)?;
 
             let menu = Menu::with_items(app, &[
                 &status_i,
                 &traffic_i,
-                &sep_i,
                 &show_i,
                 &hide_i,
                 &quit_i,

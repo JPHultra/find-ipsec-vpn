@@ -44,12 +44,23 @@ async function sendNotification(title, body) {
 }
 
 // Tray status and traffic helper
-let currentTrayStatus = 'Disconnected';
-let currentTrayTraffic = '0.00 MB ↓ / 0.00 MB ↑';
+let currentTrayStatus = '🔴  Status: Disconnected';
+let currentTrayTraffic = '📊  Traffic: 0.00 MB ↓  •  0.00 MB ↑';
 
 async function updateTrayMenu(status, traffic) {
-  if (status !== undefined) currentTrayStatus = status;
-  if (traffic !== undefined) currentTrayTraffic = traffic;
+  if (status !== undefined) {
+    if (status === 'Connected' || status.startsWith('Connected')) {
+      currentTrayStatus = `🟢  Status: ${status}`;
+    } else if (status === 'Disconnected') {
+      currentTrayStatus = `🔴  Status: Disconnected`;
+    } else {
+      currentTrayStatus = `🟡  Status: ${status}`;
+    }
+  }
+  if (traffic !== undefined) {
+    const formattedTraffic = traffic.replace(' / ', '  •  ');
+    currentTrayTraffic = `📊  Traffic: ${formattedTraffic}`;
+  }
   try {
     await invoke('update_tray_status', { status: currentTrayStatus, traffic: currentTrayTraffic });
   } catch (_) {}
