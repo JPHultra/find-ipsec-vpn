@@ -41,6 +41,17 @@
           <div class="form-instructions">Configure your FortiGate VPN connection parameters below.</div>
           <form id="vpn-config-form" class="vpn-form">
             <div class="form-group">
+              <label for="profile-selector">VPN Connection Profile</label>
+              <div class="profile-actions-wrapper">
+                <select id="profile-selector" class="profile-dropdown">
+                  <!-- Dynamically populated -->
+                </select>
+                <button type="button" id="btn-new-profile" class="btn-profile-action" title="Create new profile">+</button>
+                <button type="button" id="btn-delete-profile" class="btn-profile-action" title="Delete selected profile">🗑</button>
+              </div>
+            </div>
+
+            <div class="form-group">
               <label for="host">VPN Gateway Host / IP</label>
               <input type="text" id="host" required placeholder="vpn.findmore.pt or 88.157.96.201" value="vpn.findmore.pt" autocomplete="off" />
             </div>

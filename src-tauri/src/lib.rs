@@ -5,18 +5,26 @@ use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::Mutex;
 use std::thread;
+use std::collections::HashMap;
 use tauri::{AppHandle, Emitter, State};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct UserConfig {
+pub struct VpnProfile {
+    pub id: String,
+    pub name: String,
     pub host: String,
     pub remote_identity: String,
     pub username: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct FullConfig {
-    pub config: UserConfig,
+pub struct ProfilesConfig {
+    pub active_profile_id: String,
+    pub profiles: Vec<VpnProfile>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SecretsStatus {
     pub has_psk: bool,
     pub has_password: bool,
 }
@@ -37,7 +45,29 @@ fn get_config_dir() -> PathBuf {
     PathBuf::from(home).join(".config").join("findmore-vpn")
 }
 
-fn save_user_config(config: &UserConfig) -> Result<(), String> {
+fn load_profiles_config() -> Result<ProfilesConfig, String> {
+    let path = get_config_dir().join("config.json");
+    if !path.exists() {
+        let default_profile = VpnProfile {
+            id: "default".to_string(),
+            name: "Default Profile".to_string(),
+            host: "".to_string(),
+            remote_identity: "".to_string(),
+            username: "".to_string(),
+        };
+        let config = ProfilesConfig {
+            active_profile_id: "default".to_string(),
+            profiles: vec![default_profile],
+        };
+        let _ = save_profiles_config(&config);
+        return Ok(config);
+    }
+    let file = File::open(path).map_err(|e| e.to_string())?;
+    let config: ProfilesConfig = serde_json::from_reader(file).map_err(|e| e.to_string())?;
+    Ok(config)
+}
+
+fn save_profiles_config(config: &ProfilesConfig) -> Result<(), String> {
     let dir = get_config_dir();
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = dir.join("config.json");
@@ -46,35 +76,29 @@ fn save_user_config(config: &UserConfig) -> Result<(), String> {
     Ok(())
 }
 
-fn load_user_config() -> Result<UserConfig, String> {
-    let path = get_config_dir().join("config.json");
-    if !path.exists() {
-        return Ok(UserConfig {
-            host: "".to_string(),
-            remote_identity: "".to_string(),
-            username: "".to_string(),
-        });
-    }
-    let file = File::open(path).map_err(|e| e.to_string())?;
-    let config: UserConfig = serde_json::from_reader(file).map_err(|e| e.to_string())?;
-    Ok(config)
-}
-
-fn save_secrets(psk: &str, password: &str) -> Result<(), String> {
+fn save_secrets(profile_id: &str, psk: &str, password: &str) -> Result<(), String> {
     // 1. Try system keyring
     let keyring_ok = (|| {
-        let entry_psk = keyring::Entry::new("findmore-vpn", "psk")?;
+        let entry_psk = keyring::Entry::new("findmore-vpn", &format!("psk-{}", profile_id))?;
         entry_psk.set_password(psk)?;
-        let entry_pwd = keyring::Entry::new("findmore-vpn", "password")?;
+        let entry_pwd = keyring::Entry::new("findmore-vpn", &format!("password-{}", profile_id))?;
         entry_pwd.set_password(password)?;
         Ok::<(), keyring::Error>(())
     })().is_ok();
 
     if keyring_ok {
-        // Clear fallback file if keyring worked
+        // If keyring worked, clean fallback in secrets.json if exists
         let path = get_config_dir().join("secrets.json");
         if path.exists() {
-            let _ = fs::remove_file(path);
+            if let Ok(file) = File::open(&path) {
+                if let Ok(mut secrets_map) = serde_json::from_reader::<_, HashMap<String, SecretsStore>>(file) {
+                    if secrets_map.remove(profile_id).is_some() {
+                        if let Ok(writer_file) = File::create(&path) {
+                            let _ = serde_json::to_writer(writer_file, &secrets_map);
+                        }
+                    }
+                }
+            }
         }
         return Ok(());
     }
@@ -83,15 +107,25 @@ fn save_secrets(psk: &str, password: &str) -> Result<(), String> {
     let dir = get_config_dir();
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = dir.join("secrets.json");
-    
-    let secrets = SecretsStore {
+
+    let mut secrets_map = if path.exists() {
+        if let Ok(file) = File::open(&path) {
+            serde_json::from_reader::<_, HashMap<String, SecretsStore>>(file).unwrap_or_default()
+        } else {
+            HashMap::new()
+        }
+    } else {
+        HashMap::new()
+    };
+
+    secrets_map.insert(profile_id.to_string(), SecretsStore {
         psk: psk.to_string(),
         password: password.to_string(),
-    };
-    
+    });
+
     let file = File::create(&path).map_err(|e| e.to_string())?;
-    serde_json::to_writer(file, &secrets).map_err(|e| e.to_string())?;
-    
+    serde_json::to_writer(file, &secrets_map).map_err(|e| e.to_string())?;
+
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -99,55 +133,123 @@ fn save_secrets(psk: &str, password: &str) -> Result<(), String> {
         perms.set_mode(0o600);
         fs::set_permissions(&path, perms).map_err(|e| e.to_string())?;
     }
-    
+
     Ok(())
 }
 
-fn load_secrets() -> Result<(String, String), String> {
+fn load_secrets(profile_id: &str) -> Result<(String, String), String> {
     // 1. Try keyring
     if let (Ok(entry_psk), Ok(entry_pwd)) = (
-        keyring::Entry::new("findmore-vpn", "psk"),
-        keyring::Entry::new("findmore-vpn", "password"),
+        keyring::Entry::new("findmore-vpn", &format!("psk-{}", profile_id)),
+        keyring::Entry::new("findmore-vpn", &format!("password-{}", profile_id)),
     ) {
         if let (Ok(psk), Ok(password)) = (entry_psk.get_password(), entry_pwd.get_password()) {
             return Ok((psk, password));
         }
     }
 
-    // 2. Try file fallback
+    // 2. Try fallback file
     let path = get_config_dir().join("secrets.json");
-    if !path.exists() {
-        return Err("Pre-shared key and Password not found".to_string());
-    }
-    
-    let file = File::open(path).map_err(|e| e.to_string())?;
-    let secrets: SecretsStore = serde_json::from_reader(file).map_err(|e| e.to_string())?;
-    Ok((secrets.psk, secrets.password))
-}
-
-#[tauri::command]
-fn get_config() -> Result<FullConfig, String> {
-    let config = load_user_config()?;
-    let (has_psk, has_password) = match load_secrets() {
-        Ok((psk, pwd)) => (!psk.is_empty(), !pwd.is_empty()),
-        Err(_) => (false, false),
-    };
-    Ok(FullConfig {
-        config,
-        has_psk,
-        has_password,
-    })
-}
-
-#[tauri::command]
-fn save_config(config: UserConfig, psk: Option<String>, password: Option<String>) -> Result<(), String> {
-    save_user_config(&config)?;
-    if let (Some(p), Some(w)) = (psk, password) {
-        if !p.is_empty() && !w.is_empty() {
-            save_secrets(&p, &w)?;
+    if path.exists() {
+        let file = File::open(path).map_err(|e| e.to_string())?;
+        let secrets_map: HashMap<String, SecretsStore> = serde_json::from_reader(file).map_err(|e| e.to_string())?;
+        if let Some(secrets) = secrets_map.get(profile_id) {
+            return Ok((secrets.psk.clone(), secrets.password.clone()));
         }
     }
+
+    Err("Pre-shared key and Password not found".to_string())
+}
+
+fn delete_secrets(profile_id: &str) -> Result<(), String> {
+    if let (Ok(entry_psk), Ok(entry_pwd)) = (
+        keyring::Entry::new("findmore-vpn", &format!("psk-{}", profile_id)),
+        keyring::Entry::new("findmore-vpn", &format!("password-{}", profile_id)),
+    ) {
+        let _ = entry_psk.delete_credential();
+        let _ = entry_pwd.delete_credential();
+    }
+
+    let path = get_config_dir().join("secrets.json");
+    if path.exists() {
+        if let Ok(file) = File::open(&path) {
+            if let Ok(mut secrets_map) = serde_json::from_reader::<_, HashMap<String, SecretsStore>>(file) {
+                if secrets_map.remove(profile_id).is_some() {
+                    if let Ok(writer_file) = File::create(&path) {
+                        let _ = serde_json::to_writer(writer_file, &secrets_map);
+                    }
+                }
+            }
+        }
+    }
+
     Ok(())
+}
+
+#[tauri::command]
+fn get_profiles() -> Result<ProfilesConfig, String> {
+    load_profiles_config()
+}
+
+#[tauri::command]
+fn save_profile(profile: VpnProfile, psk: Option<String>, password: Option<String>) -> Result<(), String> {
+    let mut config = load_profiles_config()?;
+    
+    if let (Some(p), Some(w)) = (&psk, &password) {
+        if !p.is_empty() && !w.is_empty() {
+            save_secrets(&profile.id, p, w)?;
+        }
+    }
+    
+    if let Some(pos) = config.profiles.iter().position(|p| p.id == profile.id) {
+        config.profiles[pos] = profile.clone();
+    } else {
+        config.profiles.push(profile.clone());
+    }
+    
+    config.active_profile_id = profile.id.clone();
+    save_profiles_config(&config)?;
+    Ok(())
+}
+
+#[tauri::command]
+fn delete_profile(profile_id: String) -> Result<ProfilesConfig, String> {
+    let mut config = load_profiles_config()?;
+    
+    if config.profiles.len() <= 1 {
+        return Err("Cannot delete the last remaining profile".to_string());
+    }
+    
+    config.profiles.retain(|p| p.id != profile_id);
+    
+    if config.active_profile_id == profile_id {
+        config.active_profile_id = config.profiles[0].id.clone();
+    }
+    
+    let _ = delete_secrets(&profile_id);
+    save_profiles_config(&config)?;
+    Ok(config)
+}
+
+#[tauri::command]
+fn set_active_profile(profile_id: String) -> Result<(), String> {
+    let mut config = load_profiles_config()?;
+    if config.profiles.iter().any(|p| p.id == profile_id) {
+        config.active_profile_id = profile_id;
+        save_profiles_config(&config)?;
+        Ok(())
+    } else {
+        Err("Profile not found".to_string())
+    }
+}
+
+#[tauri::command]
+fn get_profile_secrets_status(profile_id: String) -> Result<SecretsStatus, String> {
+    let has_secrets = load_secrets(&profile_id).is_ok();
+    Ok(SecretsStatus {
+        has_psk: has_secrets,
+        has_password: has_secrets,
+    })
 }
 
 #[tauri::command]
@@ -159,10 +261,12 @@ fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), 
         return Err("VPN connection helper is already running".to_string());
     }
 
-    let config = load_user_config()?;
-    let (psk, password) = load_secrets()?;
+    let config = load_profiles_config()?;
+    let active_profile = config.profiles.iter().find(|p| p.id == config.active_profile_id)
+        .ok_or_else(|| "Active profile not found".to_string())?;
+    
+    let (psk, password) = load_secrets(&active_profile.id)?;
 
-    // Find findmore-vpn-helper path (check global, then development fallback)
     let helper_path = if std::path::Path::new("/usr/bin/findmore-vpn-helper").exists() {
         "/usr/bin/findmore-vpn-helper".to_string()
     } else {
@@ -192,12 +296,11 @@ fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), 
     let mut stdin = child.stdin.take().ok_or_else(|| "Failed to capture helper stdin".to_string())?;
     let stdout = child.stdout.take().ok_or_else(|| "Failed to capture helper stdout".to_string())?;
 
-    // Send Connection commands immediately to helper in JSON format
     let connect_cmd = serde_json::json!({
         "type": "Connect",
-        "host": config.host,
-        "remote_identity": config.remote_identity,
-        "username": config.username,
+        "host": active_profile.host,
+        "remote_identity": active_profile.remote_identity,
+        "username": active_profile.username,
         "psk": psk,
         "password": password
     });
@@ -209,7 +312,6 @@ fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), 
     *child_stdin_lock = Some(stdin);
     *child_proc_lock = Some(child);
 
-    // Read log outputs from helper in background
     thread::spawn(move || {
         let reader = BufReader::new(stdout);
         for line in reader.lines() {
@@ -217,7 +319,6 @@ fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), 
                 let _ = app_handle.emit("vpn-event", l);
             }
         }
-        // Emit offline event when connection terminates
         let _ = app_handle.emit("vpn-event", "{\"type\":\"Status\",\"state\":\"Disconnected\",\"message\":\"Helper process exited\"}");
     });
 
@@ -258,7 +359,6 @@ fn disconnect_vpn(state: State<'_, VpnState>) -> Result<(), String> {
     *stdin_lock = None;
 
     if let Some(mut child) = proc_lock.take() {
-        // Give the helper 500ms to receive command, kill charon-cmd gracefully, and exit
         std::thread::sleep(std::time::Duration::from_millis(500));
         let _ = child.kill();
         let _ = child.wait();
@@ -276,8 +376,11 @@ pub fn run() {
             child_process: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
-            get_config,
-            save_config,
+            get_profiles,
+            save_profile,
+            delete_profile,
+            set_active_profile,
+            get_profile_secrets_status,
             connect_vpn,
             submit_otp,
             disconnect_vpn

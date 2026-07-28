@@ -12,8 +12,13 @@ let sessionLogPre, engineLogPre;
 let btnToggleLogs, btnClearLogs, logDrawer;
 let tabs, tabPanes;
 
+// Profiles DOM Elements
+let profileSelector, btnNewProfile, btnDeleteProfile;
+
 // State helper variables
 let unlistenVpnEvent = null;
+let profiles = [];
+let activeProfileId = 'default';
 
 // Helpers to format metrics
 function formatBytes(bytes) {
@@ -52,27 +57,86 @@ function appendSessionLog(message, isError = false) {
   sessionLogPre.scrollTop = sessionLogPre.scrollHeight;
 }
 
+// Append logs to engine tab
 function appendEngineLog(message) {
   const timestamp = new Date().toLocaleTimeString();
   engineLogPre.innerHTML += `<span style="color: #4b5563;">[${timestamp}]</span> ${message}<br>`;
   engineLogPre.scrollTop = engineLogPre.scrollHeight;
 }
 
-// Save config to keyring/file
+// Load and populate profiles list
+async function loadProfiles() {
+  try {
+    const config = await invoke('get_profiles');
+    profiles = config.profiles;
+    activeProfileId = config.active_profile_id;
+
+    // Repopulate select dropdown
+    profileSelector.innerHTML = '';
+    profiles.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      profileSelector.appendChild(opt);
+    });
+    profileSelector.value = activeProfileId;
+
+    // Load active profile data
+    const activeProfile = profiles.find(p => p.id === activeProfileId);
+    if (activeProfile) {
+      inputHost.value = activeProfile.host || '';
+      inputRemoteId.value = activeProfile.remote_identity || '';
+      inputUsername.value = activeProfile.username || '';
+
+      // Clear password values for safety when switching profiles
+      inputPsk.value = '';
+      inputPassword.value = '';
+
+      // Check key storage secrets status for placeholders
+      const status = await invoke('get_profile_secrets_status', { profileId: activeProfileId });
+      if (status.has_psk) {
+        inputPsk.placeholder = '•••••••••••••••• (Saved)';
+        inputPsk.removeAttribute('required');
+      } else {
+        inputPsk.placeholder = '••••••••••••••••';
+        inputPsk.setAttribute('required', 'true');
+      }
+
+      if (status.has_password) {
+        inputPassword.placeholder = '•••••••••••••••• (Saved)';
+        inputPassword.removeAttribute('required');
+      } else {
+        inputPassword.placeholder = '••••••••••••••••';
+        inputPassword.setAttribute('required', 'true');
+      }
+    }
+  } catch (err) {
+    appendSessionLog(`Error loading profiles: ${err}`, true);
+  }
+}
+
+// Save active profile parameters to disk and keyring
 async function saveConfigData() {
-  const host = inputHost.value.trim();
-  const remote_identity = inputRemoteId.value.trim();
-  const username = inputUsername.value.trim();
+  const activeProfile = profiles.find(p => p.id === activeProfileId);
+  if (!activeProfile) {
+    appendSessionLog('No active profile to save configuration settings.', true);
+    return;
+  }
+
+  activeProfile.host = inputHost.value.trim();
+  activeProfile.remote_identity = inputRemoteId.value.trim();
+  activeProfile.username = inputUsername.value.trim();
   const psk = inputPsk.value;
   const password = inputPassword.value;
 
   try {
-    await invoke('save_config', {
-      config: { host, remote_identity, username },
+    await invoke('save_profile', {
+      profile: activeProfile,
       psk: psk ? psk : null,
       password: password ? password : null
     });
-    appendSessionLog('Configuration settings updated.');
+    appendSessionLog(`Profile "${activeProfile.name}" updated successfully.`);
+    await loadProfiles();
   } catch (err) {
     appendSessionLog(`Failed to save configuration: ${err}`, true);
   }
@@ -96,6 +160,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   inputPassword = document.getElementById('password');
   inputOtp = document.getElementById('otp-code');
 
+  // Bind profiles inputs
+  profileSelector = document.getElementById('profile-selector');
+  btnNewProfile = document.getElementById('btn-new-profile');
+  btnDeleteProfile = document.getElementById('btn-delete-profile');
+
   // Bind status/metric elements
   connectingMessage = document.getElementById('connecting-message');
   uptimeCounter = document.getElementById('uptime-counter');
@@ -113,25 +182,62 @@ window.addEventListener('DOMContentLoaded', async () => {
   btnClearLogs = document.getElementById('btn-clear-logs');
   logDrawer = document.getElementById('log-drawer');
 
-  // Load existing config
-  try {
-    const fullConfig = await invoke('get_config');
-    if (fullConfig && fullConfig.config) {
-      inputHost.value = fullConfig.config.host || 'vpn.findmore.pt';
-      inputRemoteId.value = fullConfig.config.remote_identity || '';
-      inputUsername.value = fullConfig.config.username || '';
-      if (fullConfig.has_psk) {
-        inputPsk.placeholder = '•••••••••••••••• (Saved)';
-        inputPsk.removeAttribute('required');
-      }
-      if (fullConfig.has_password) {
-        inputPassword.placeholder = '•••••••••••••••• (Saved)';
-        inputPassword.removeAttribute('required');
+  // Load profiles list and data
+  await loadProfiles();
+
+  // Profile Selector Change Handler
+  profileSelector.addEventListener('change', async (e) => {
+    const selectedId = e.target.value;
+    try {
+      await invoke('set_active_profile', { profileId: selectedId });
+      await loadProfiles();
+      appendSessionLog(`Switched active profile.`);
+    } catch (err) {
+      appendSessionLog(`Failed to change profile: ${err}`, true);
+    }
+  });
+
+  // Create New Profile Button Handler
+  btnNewProfile.addEventListener('click', async () => {
+    const name = prompt("Enter a name for the new profile:");
+    if (name && name.trim()) {
+      const newProfile = {
+        id: `profile_${Date.now()}`,
+        name: name.trim(),
+        host: '',
+        remote_identity: '',
+        username: ''
+      };
+      try {
+        await invoke('save_profile', { profile: newProfile, psk: '', password: '' });
+        await loadProfiles();
+        appendSessionLog(`Created new profile: "${newProfile.name}".`);
+      } catch (err) {
+        appendSessionLog(`Failed to create profile: ${err}`, true);
       }
     }
-  } catch (err) {
-    appendSessionLog(`Error reading configuration: ${err}`, true);
-  }
+  });
+
+  // Delete Selected Profile Button Handler
+  btnDeleteProfile.addEventListener('click', async () => {
+    const activeProfile = profiles.find(p => p.id === activeProfileId);
+    if (!activeProfile) return;
+
+    if (profiles.length <= 1) {
+      alert("Cannot delete the last remaining profile.");
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete the profile "${activeProfile.name}"?`)) {
+      try {
+        await invoke('delete_profile', { profileId: activeProfileId });
+        await loadProfiles();
+        appendSessionLog(`Deleted profile "${activeProfile.name}".`);
+      } catch (err) {
+        appendSessionLog(`Failed to delete profile: ${err}`, true);
+      }
+    }
+  });
 
   // Handle configuration connect submission
   formConfig.addEventListener('submit', async (e) => {
