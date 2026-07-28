@@ -328,7 +328,7 @@ fn main() {
                                     state: "Authenticating".to_string(),
                                     message: "Sending pre-shared key...".to_string(),
                                 });
-                            } else if current_str.ends_with("Password: ") {
+                            } else if current_str.ends_with("Password: ") || current_str.ends_with("EAP password: ") {
                                 buffer.clear();
                                 let _ = reader.write_all(format!("{}\n", pwd_secret).as_bytes());
                                 let _ = reader.flush();
