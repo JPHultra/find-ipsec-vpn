@@ -1,24 +1,7 @@
-// FINDMORE VPN GITHUB PAGES LANDING INTERACTIVE LOGIC
+// FINDMORE VPN GITHUB PAGES LANDING SCRIPTS
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. DEMO TAB SWITCHING LOGIC
-  const demoTabBtns = document.querySelectorAll('.demo-tab-btn');
-  const demoViewPanes = document.querySelectorAll('.demo-view-pane');
-
-  demoTabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetView = btn.getAttribute('data-view');
-
-      demoTabBtns.forEach(b => b.classList.remove('active'));
-      demoViewPanes.forEach(pane => pane.classList.remove('active'));
-
-      btn.classList.add('active');
-      const activePane = document.getElementById(`demo-view-${targetView}`);
-      if (activePane) activePane.classList.add('active');
-    });
-  });
-
-  // 2. INSTALLER DISTRO TAB SWITCHING LOGIC
+  // 1. INSTALLER DISTRO TAB SWITCHING LOGIC
   const installerTabBtns = document.querySelectorAll('.installer-tab-btn');
   const codeTextElem = document.getElementById('installer-code-text');
 
@@ -62,7 +45,7 @@ cd findmore-vpn
     });
   });
 
-  // 3. ONE-CLICK CODE COPY LOGIC
+  // 2. ONE-CLICK CODE COPY LOGIC
   const copyBtn = document.getElementById('btn-copy-code');
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
@@ -83,18 +66,5 @@ cd findmore-vpn
         console.error('Failed to copy text: ', err);
       }
     });
-  }
-
-  // 4. LIVE UPTIME COUNTER SIMULATION
-  const uptimeElem = document.getElementById('demo-uptime');
-  if (uptimeElem) {
-    let seconds = 6138; // Starts at 01:42:18
-    setInterval(() => {
-      seconds++;
-      const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
-      const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-      const secs = (seconds % 60).toString().padStart(2, '0');
-      uptimeElem.textContent = `${hrs}:${mins}:${secs}`;
-    }, 1000);
   }
 });
