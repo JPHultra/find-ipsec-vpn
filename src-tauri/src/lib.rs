@@ -44,7 +44,7 @@ pub struct VpnState {
 
 fn get_config_dir() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| "/root".to_string());
-    PathBuf::from(home).join(".config").join("findmore-vpn")
+    PathBuf::from(home).join(".config").join("findipsec-vpn")
 }
 
 #[derive(Deserialize)]
@@ -56,8 +56,8 @@ struct UserConfigLegacy {
 
 fn load_secrets_legacy() -> Result<(String, String), String> {
     if let (Ok(entry_psk), Ok(entry_pwd)) = (
-        keyring::Entry::new("findmore-vpn", "psk"),
-        keyring::Entry::new("findmore-vpn", "password"),
+        keyring::Entry::new("findipsec-vpn", "psk"),
+        keyring::Entry::new("findipsec-vpn", "password"),
     ) {
         if let (Ok(psk), Ok(password)) = (entry_psk.get_password(), entry_pwd.get_password()) {
             return Ok((psk, password));
@@ -78,8 +78,8 @@ fn load_secrets_legacy() -> Result<(String, String), String> {
 
 fn delete_secrets_legacy() -> Result<(), String> {
     if let (Ok(entry_psk), Ok(entry_pwd)) = (
-        keyring::Entry::new("findmore-vpn", "psk"),
-        keyring::Entry::new("findmore-vpn", "password"),
+        keyring::Entry::new("findipsec-vpn", "psk"),
+        keyring::Entry::new("findipsec-vpn", "password"),
     ) {
         let _ = entry_psk.delete_credential();
         let _ = entry_pwd.delete_credential();
@@ -153,9 +153,9 @@ fn save_profiles_config(config: &ProfilesConfig) -> Result<(), String> {
 fn save_secrets(profile_id: &str, psk: &str, password: &str) -> Result<(), String> {
     // 1. Try system keyring
     let _ = (|| {
-        let entry_psk = keyring::Entry::new("findmore-vpn", &format!("psk-{}", profile_id))?;
+        let entry_psk = keyring::Entry::new("findipsec-vpn", &format!("psk-{}", profile_id))?;
         entry_psk.set_password(psk)?;
-        let entry_pwd = keyring::Entry::new("findmore-vpn", &format!("password-{}", profile_id))?;
+        let entry_pwd = keyring::Entry::new("findipsec-vpn", &format!("password-{}", profile_id))?;
         entry_pwd.set_password(password)?;
         Ok::<(), keyring::Error>(())
     })();
@@ -197,8 +197,8 @@ fn save_secrets(profile_id: &str, psk: &str, password: &str) -> Result<(), Strin
 fn load_secrets(profile_id: &str) -> Result<(String, String), String> {
     // 1. Try keyring
     if let (Ok(entry_psk), Ok(entry_pwd)) = (
-        keyring::Entry::new("findmore-vpn", &format!("psk-{}", profile_id)),
-        keyring::Entry::new("findmore-vpn", &format!("password-{}", profile_id)),
+        keyring::Entry::new("findipsec-vpn", &format!("psk-{}", profile_id)),
+        keyring::Entry::new("findipsec-vpn", &format!("password-{}", profile_id)),
     ) {
         if let (Ok(psk), Ok(password)) = (entry_psk.get_password(), entry_pwd.get_password()) {
             return Ok((psk, password));
@@ -220,8 +220,8 @@ fn load_secrets(profile_id: &str) -> Result<(String, String), String> {
 
 fn delete_secrets(profile_id: &str) -> Result<(), String> {
     if let (Ok(entry_psk), Ok(entry_pwd)) = (
-        keyring::Entry::new("findmore-vpn", &format!("psk-{}", profile_id)),
-        keyring::Entry::new("findmore-vpn", &format!("password-{}", profile_id)),
+        keyring::Entry::new("findipsec-vpn", &format!("psk-{}", profile_id)),
+        keyring::Entry::new("findipsec-vpn", &format!("password-{}", profile_id)),
     ) {
         let _ = entry_psk.delete_credential();
         let _ = entry_pwd.delete_credential();
@@ -339,22 +339,22 @@ fn connect_vpn(app_handle: AppHandle, state: State<'_, VpnState>) -> Result<(), 
     
     let (psk, password) = load_secrets(&active_profile.id)?;
 
-    let helper_path = if std::path::Path::new("/usr/bin/findmore-vpn-helper").exists() {
-        "/usr/bin/findmore-vpn-helper".to_string()
+    let helper_path = if std::path::Path::new("/usr/bin/findipsec-vpn-helper").exists() {
+        "/usr/bin/findipsec-vpn-helper".to_string()
     } else {
         if let Ok(exe_path) = std::env::current_exe() {
             if let Some(parent) = exe_path.parent() {
-                let local_helper = parent.join("findmore-vpn-helper");
+                let local_helper = parent.join("findipsec-vpn-helper");
                 if local_helper.exists() {
                     local_helper.to_string_lossy().to_string()
                 } else {
-                    "/usr/bin/findmore-vpn-helper".to_string()
+                    "/usr/bin/findipsec-vpn-helper".to_string()
                 }
             } else {
-                "/usr/bin/findmore-vpn-helper".to_string()
+                "/usr/bin/findipsec-vpn-helper".to_string()
             }
         } else {
-            "/usr/bin/findmore-vpn-helper".to_string()
+            "/usr/bin/findipsec-vpn-helper".to_string()
         }
     };
 
@@ -518,7 +518,7 @@ pub fn run() {
             let traffic_i = MenuItem::with_id(app, "traffic_info", "📊  Traffic: 0.00 MB ↓  •  0.00 MB ↑", false, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "🖥️   Open Dashboard", true, None::<&str>)?;
             let hide_i = MenuItem::with_id(app, "hide", "📥   Hide to System Tray", true, None::<&str>)?;
-            let quit_i = MenuItem::with_id(app, "quit", "❌   Quit Findmore VPN", true, None::<&str>)?;
+            let quit_i = MenuItem::with_id(app, "quit", "❌   Quit FindIPSec VPN", true, None::<&str>)?;
 
             let menu = Menu::with_items(app, &[
                 &status_i,

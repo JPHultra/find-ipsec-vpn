@@ -1,21 +1,21 @@
 [package]
-name = "findmore-vpn"
+name = "findipsec-vpn"
 version = "1.0.0"
-description = "Findmore VPN Client"
+description = "FindIPSec VPN Client"
 edition = "2021"
-default-run = "findmore-vpn-gui"
+default-run = "findipsec-vpn-gui"
 
 [lib]
-name = "findmore_vpn_lib"
+name = "findipsec_vpn_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 path = "src/lib.rs"
 
 [[bin]]
-name = "findmore-vpn-gui"
+name = "findipsec-vpn-gui"
 path = "src/main.rs"
 
 [[bin]]
-name = "findmore-vpn-helper"
+name = "findipsec-vpn-helper"
 path = "src/helper.rs"
 
 [build-dependencies]

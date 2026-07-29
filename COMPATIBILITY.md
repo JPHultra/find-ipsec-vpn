@@ -1,6 +1,6 @@
 # Linux Distribution & Desktop Feature Compatibility Matrix
 
-This document provides a detailed feature compatibility matrix, dependency mappings, and configuration guidelines for running Findmore FortiGate VPN across major Linux distributions and desktop environments.
+This document provides a detailed feature compatibility matrix, dependency mappings, and configuration guidelines for running FindIPSec FortiGate VPN across major Linux distributions and desktop environments.
 
 ---
 
@@ -41,11 +41,11 @@ This document provides a detailed feature compatibility matrix, dependency mappi
 
 ### 2. Arch Linux / Omarchy (Hyprland & Waybar)
 - **System Tray**: System tray indicators are rendered via Waybar's `tray` module using the StatusNotifierItem (SNI) protocol.
-- **Autostart**: Uses `~/.config/hypr/autostart.conf` (`exec-once = findmore-vpn-gui --tray`).
+- **Autostart**: Uses `~/.config/hypr/autostart.conf` (`exec-once = findipsec-vpn-gui --tray`).
 
 ### 3. Keyring Service Availability
-- **SecretStorage API**: Findmore VPN communicates with `org.freedesktop.secrets` via `libsecret`. If running on a headless or bare window manager setup without Gnome Keyring or KWallet, credentials automatically fall back to `~/.config/findmore-vpn/secrets.json` protected with strict `0600` Linux user permissions.
+- **SecretStorage API**: FindIPSec VPN communicates with `org.freedesktop.secrets` via `libsecret`. If running on a headless or bare window manager setup without Gnome Keyring or KWallet, credentials automatically fall back to `~/.config/findipsec-vpn/secrets.json` protected with strict `0600` Linux user permissions.
 
 ### 4. AppArmor & SELinux Policy Notes
-- **Fedora / RHEL (SELinux)**: Polkit execution for `/usr/bin/findmore-vpn-helper` via `pkexec` is pre-approved under standard `unconfined_service_t` or `unconfined_t` user domains.
+- **Fedora / RHEL (SELinux)**: Polkit execution for `/usr/bin/findipsec-vpn-helper` via `pkexec` is pre-approved under standard `unconfined_service_t` or `unconfined_t` user domains.
 - **Ubuntu / Debian (AppArmor)**: No custom AppArmor profiles interfere with PTY allocation or strongSwan execution.

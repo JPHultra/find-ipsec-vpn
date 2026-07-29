@@ -494,7 +494,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       showPanel(viewConfig);
       showErrorBanner(`Connection Failed: ${err}`);
       appendSessionLog(`Elevated connection initiation failed: ${err}`, true);
-      sendNotification('Findmore VPN Failed', `Connection failed: ${err}`);
+      sendNotification('FindIPSec Failed', `Connection failed: ${err}`);
     }
   });
 
@@ -524,7 +524,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     try {
       await invoke('disconnect_vpn');
       showPanel(viewConfig);
-      sendNotification('Findmore VPN Disconnected', 'VPN tunnel has been disconnected.');
+      sendNotification('FindIPSec Disconnected', 'VPN tunnel has been disconnected.');
     } catch (err) {
       appendSessionLog(`Disconnect operation failed: ${err}`, true);
     }
@@ -567,12 +567,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     btnExportLogs.addEventListener('click', () => {
       const sessionText = sessionLogPre ? sessionLogPre.innerText : '';
       const engineText = engineLogPre ? engineLogPre.innerText : '';
-      const combined = `=== FINDMORE VPN SESSION LOGS ===\n${sessionText}\n\n=== FINDMORE VPN ENGINE LOGS ===\n${engineText}`;
+      const combined = `=== FINDIPSEC VPN SESSION LOGS ===\n${sessionText}\n\n=== FINDIPSEC VPN ENGINE LOGS ===\n${engineText}`;
       const blob = new Blob([combined], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `findmore-vpn-logs-${new Date().toISOString().slice(0, 10)}.log`;
+      a.download = `findipsec-vpn-logs-${new Date().toISOString().slice(0, 10)}.log`;
       a.click();
       URL.revokeObjectURL(url);
       appendSessionLog('Exported logs to diagnostic file.');
@@ -612,11 +612,11 @@ window.addEventListener('DOMContentLoaded', async () => {
           } else if (msg.state === 'WaitingForOtp') {
             showPanel(viewOtp);
             inputOtp.focus();
-            sendNotification('Findmore VPN 2FA Required', 'Please enter the verification code sent to your email.');
+            sendNotification('FindIPSec 2FA Required', 'Please enter the verification code sent to your email.');
             updateTrayMenu('Waiting for 2FA');
           } else if (msg.state === 'Connected') {
             showPanel(viewConnected);
-            sendNotification('Findmore VPN Connected', 'Secure IPsec tunnel successfully established.');
+            sendNotification('FindIPSec Connected', 'Secure IPsec tunnel successfully established.');
             updateTrayMenu('Connected');
           } else if (msg.state === 'Disconnected') {
             showPanel(viewConfig);
@@ -626,7 +626,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             if (!isUserInitiatedDisconnect && autoReconnectToggle && autoReconnectToggle.checked && !isAutoReconnecting) {
               isAutoReconnecting = true;
               appendSessionLog('Connection dropped unexpectedly. Auto-reconnecting in 3 seconds...', true);
-              sendNotification('Findmore VPN Drop', 'Tunnel dropped unexpectedly. Reconnecting in 3s...');
+              sendNotification('FindIPSec Drop', 'Tunnel dropped unexpectedly. Reconnecting in 3s...');
               updateTrayMenu('Reconnecting...');
               setTimeout(() => {
                 isAutoReconnecting = false;
@@ -661,7 +661,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           appendSessionLog(`Helper Error: ${msg.message}`, true);
           showPanel(viewConfig);
           showErrorBanner(msg.message);
-          sendNotification('Findmore VPN Error', msg.message);
+          sendNotification('FindIPSec Error', msg.message);
           updateTrayMenu('Disconnected', '0.00 MB ↓ / 0.00 MB ↑');
           break;
       }

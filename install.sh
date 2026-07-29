@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Findmore FortiGate VPN Client - Universal Multi-Distro Installer
+# FindIPSec FortiGate VPN Client - Universal Multi-Distro Installer
 
 set -euo pipefail
 

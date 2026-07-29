@@ -4,7 +4,7 @@
 <policyconfig>
   <vendor>FindIPSec VPN</vendor>
   <vendor_url>https://github.com/JPHultra/findmore-vpn</vendor_url>
-  <action id="pt.findmore.vpn.helper">
+  <action id="pt.findipsec.vpn.helper">
     <description>Run FindIPSec VPN Helper</description>
     <message>Authentication is required to start or stop the FindIPSec VPN tunnel.</message>
     <defaults>

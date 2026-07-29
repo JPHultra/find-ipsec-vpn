@@ -1,6 +1,6 @@
-# Findmore FortiGate VPN GUI Client
+# FindIPSec FortiGate VPN GUI Client
 
-A lightweight, secure, and beautiful desktop application for connecting to the Findmore FortiGate VPN on Arch Linux (Omarchy / Hyprland / GNOME / KDE) and other Linux distributions.
+A lightweight, secure, and beautiful desktop application for connecting to FortiGate VPNs on Arch Linux (Omarchy / Hyprland / GNOME / KDE) and other Linux distributions.
 
 This application is built using **Tauri v2 (Rust + HTML/CSS/JS)**. It provides a privilege-separated frontend to drive strongSwan's `charon-cmd` engine, interactively handle FortiGate's email OTP passcode verification, and monitor live connection metrics.
 
@@ -11,7 +11,7 @@ This application is built using **Tauri v2 (Rust + HTML/CSS/JS)**. It provides a
 ## Key Features
 
 ### 🔒 Enterprise Security & Privilege Separation
-- **Privilege-Separated Architecture**: The GUI runs completely unprivileged in user space. All IPsec tunneling and route manipulation operations are executed by an elevated child helper (`findmore-vpn-helper`) spawned securely via `pkexec`.
+- **Privilege-Separated Architecture**: The GUI runs completely unprivileged in user space. All IPsec tunneling and route manipulation operations are executed by an elevated child helper (`findipsec-vpn-helper`) spawned securely via `pkexec`.
 - **POSIX PTY Credential Passing**: Allocates pseudo-terminals (`libc::posix_openpt`) so strongSwan authentication prompts receive credentials programmatically without command-line parameters or process argument leakage.
 - **OS Keyring Integration**: Pre-Shared Keys (PSK) and user account passwords are saved directly into the Linux OS Keyring (`libsecret` / Gnome Keyring / KWallet) with restricted `0600` file fallback.
 - **Keyring Security Badge**: Visual status indicator in the profile editor indicating when credentials are hardware/keyring secured.
@@ -24,7 +24,7 @@ This application is built using **Tauri v2 (Rust + HTML/CSS/JS)**. It provides a
 ### 📊 Real-Time Metrics & Diagnostic Logs
 - **Live Traffic Monitoring**: Queries Linux kernel IPsec Security Association tables (`ip -s xfrm state`) every 1.5 seconds to report real-time byte throughput (Sent / Received) and uptime counters.
 - **Split Log Drawer**: Access real-time **Session Logs** and **Engine Logs**.
-- **One-Click Copy & Export**: Copy log buffers directly to your clipboard or export combined diagnostic files (`findmore-vpn-logs-YYYY-MM-DD.log`).
+- **One-Click Copy & Export**: Copy log buffers directly to your clipboard or export combined diagnostic files (`findipsec-vpn-logs-YYYY-MM-DD.log`).
 
 ### 📌 System Tray & Desktop Integration
 - **System Tray Dropdown**: Displays live connection state (e.g. `Status: Connected (10.7.1.11)`) and live traffic throughput (e.g. `Traffic: 1.25 MB ↓ / 340.00 KB ↑`) directly in the tray context menu.
@@ -39,7 +39,7 @@ This application is built using **Tauri v2 (Rust + HTML/CSS/JS)**. It provides a
 
 ```
 ┌────────────────────────────────────────┐
-│        Findmore VPN GUI (User)         │
+│        FindIPSec VPN GUI (User)        │
 │  - Profile selector & credential store │
 │  - System tray & live traffic metrics  │
 │  - Secure OS Keyring integration       │
@@ -48,7 +48,7 @@ This application is built using **Tauri v2 (Rust + HTML/CSS/JS)**. It provides a
                     │ stdin/stdout (JSON Lines)
                     ▼
 ┌────────────────────────────────────────┐
-│   findmore-vpn-helper (Root/pkexec)    │
+│   findipsec-vpn-helper (Root/pkexec)   │
 │  - Spawns charon-cmd inside POSIX PTY  │
 │  - Auto-fills PSK and password        │
 │  - Intercepts and yields OTP prompt   │
@@ -62,12 +62,12 @@ This application is built using **Tauri v2 (Rust + HTML/CSS/JS)**. It provides a
 
 ```bash
 # Standard launch (opens window by default)
-findmore-vpn-gui
+findipsec-vpn-gui
 
 # Start silently minimized to the system tray
-findmore-vpn-gui --tray
+findipsec-vpn-gui --tray
 # or
-findmore-vpn-gui -t
+findipsec-vpn-gui -t
 ```
 
 ---
@@ -99,11 +99,11 @@ findmore-vpn/
 │       └── helper.rs           # Privileged helper process
 ├── packaging/
 │   ├── polkit/
-│   │   └── pt.findmore.vpn.helper.policy  # Polkit XML rules for elevated execution
+│   │   └── pt.findipsec.vpn.helper.policy  # Polkit XML rules for elevated execution
 │   └── arch/
-│       ├── findmore-vpn.desktop           # Desktop application launcher
-│       ├── findmore-vpn.svg               # Application icon
-│       ├── findmore-vpn.PKGBUILD          # PKGBUILD for the client application
+│       ├── findipsec-vpn.desktop           # Desktop application launcher
+│       ├── findipsec-vpn.svg               # Application icon
+│       ├── findipsec-vpn.PKGBUILD          # PKGBUILD for the client application
 │       ├── strongswan-fortigate.PKGBUILD   # PKGBUILD for the patched strongSwan
 │       └── xauth-passcode.patch           # strongSwan patch file
 └── README.md                   # Project documentation
@@ -131,14 +131,14 @@ To compile both the GUI and the helper in release mode:
 npm run tauri build -- --no-bundle
 ```
 The output binaries are generated in `target/release/`:
-- `target/release/findmore-vpn-gui`
-- `target/release/findmore-vpn-helper`
+- `target/release/findipsec-vpn-gui`
+- `target/release/findipsec-vpn-helper`
 
 ---
 
 ## Multi-Distribution Linux Installation
 
-Findmore VPN includes an automated, universal installer script that detects your Linux distribution family and deploys all dependencies, Polkit rules, binaries, and desktop icons.
+FindIPSec VPN includes an automated, universal installer script that detects your Linux distribution family and deploys all dependencies, Polkit rules, binaries, and desktop icons.
 
 For full feature matrix and desktop environment details, see [COMPATIBILITY.md](file:///home/joao/Projects/findmore-vpn/COMPATIBILITY.md).
 
