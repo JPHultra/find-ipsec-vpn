@@ -174,15 +174,3 @@ You can also execute distribution-specific installation scripts directly:
 # openSUSE family
 ./scripts/install/install-opensuse.sh
 ```
-
----
-
-## GitHub Pages Landing Site
-
-A responsive glassmorphic landing website is provided in the [`docs/`](file:///home/joao/Projects/findmore-vpn/docs/index.html) directory.
-
-### How to Enable GitHub Pages:
-1. Navigate to your GitHub repository: **Settings** -> **Pages**.
-2. Under **Build and deployment** -> **Source**, select **Deploy from a branch**.
-3. Under **Branch**, select `main` and set the directory to `/docs`.
-4. Click **Save**. Your landing site will be live at `https://jphultra.github.io/findmore-vpn/`.
