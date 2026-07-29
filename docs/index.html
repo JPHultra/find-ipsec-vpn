@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Findmore FortiGate VPN Client — Lightweight Linux Desktop GUI</title>
+  <meta name="description"
+    content="A lightweight, secure, and beautiful desktop application for connecting to FortiGate IPsec VPNs on Linux with interactive 2FA, system tray metrics, and OS Keyring integration.">
+  <link rel="icon" type="image/svg+xml" href="./assets/findmore_simple_icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+  <!-- BACKGROUND GLOW EFFECTS -->
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="#" class="brand-link">
+        <img src="./assets/findmore_simple_icon.svg" alt="Findmore Logo" class="brand-logo">
+        <span class="brand-title">Findmore <span class="brand-accent">VPN</span></span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#demo">Live Demo</a>
+        <a href="#installation">Installation</a>
+        <a href="#compatibility">Compatibility</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="https://github.com/JPHultra/findmore-vpn" target="_blank" rel="noopener" class="btn btn-nav">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+          </svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-container">
+        <div class="hero-content">
+          <div class="badge-pill">
+            <span class="pulse-dot"></span>
+            <span>Tauri v2 • Arch • Ubuntu • Fedora • openSUSE</span>
+          </div>
+
+          <h1 class="hero-title">
+            The FortiGate IPsec VPN Client Built for <span class="gradient-text">Linux</span>
+          </h1>
+
+          <p class="hero-description">
+            A lightweight, secure, and beautiful desktop application for connecting to FortiGate VPNs. Features interactive 2FA passcode handling, OS Keyring security, live system tray traffic monitoring, and privileged PTY tunnel management.
+          </p>
+
+          <div class="hero-cta">
+            <a href="#installation" class="btn btn-primary btn-hero">
+              <span>Install Findmore VPN</span>
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m0 0l6-6m-6 6l-6-6" />
+              </svg>
+            </a>
+            <a href="#demo" class="btn btn-secondary btn-hero">
+              <span>Explore Interactive Demo</span>
+            </a>
+          </div>
+
+          <div class="hero-highlights">
+            <div class="highlight-item">
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Privilege Separated (`pkexec`)</span>
+            </div>
+            <div class="highlight-item">
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Hardware Keyring Secured</span>
+            </div>
+            <div class="highlight-item">
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Interactive Email 2FA OTP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- HERO APP PREVIEW MOCKUP -->
+        <div class="hero-preview">
+          <div class="app-card-frame">
+            <div class="app-header-bar">
+              <div class="app-title-group">
+                <img src="./assets/findmore_simple_icon.svg" alt="App Logo" class="app-header-logo">
+                <span class="app-header-text">Findmore VPN</span>
+              </div>
+              <div class="app-status-badge status-connected">
+                <span class="status-dot"></span>
+                <span>Connected</span>
+              </div>
+            </div>
+
+            <div class="app-body-preview">
+              <div class="hero-connected-hero">
+                <div class="glowing-circle">
+                  <div class="glow-core"></div>
+                </div>
+                <div class="uptime-badge">
+                  <span id="demo-uptime">01:42:18</span>
+                </div>
+                <div class="hero-status-text">Tunnel Active</div>
+              </div>
+
+              <div class="preview-metrics-grid">
+                <div class="preview-metric-box">
+                  <span class="metric-label">VPN Virtual IP</span>
+                  <span class="metric-value">10.8.0.42</span>
+                </div>
+                <div class="preview-metric-box">
+                  <span class="metric-label">Gateway Host</span>
+                  <span class="metric-value">vpn.example.com</span>
+                </div>
+                <div class="preview-metric-box">
+                  <span class="metric-label">Traffic Downloaded</span>
+                  <span class="metric-value text-accent">51.80 MB ↓</span>
+                </div>
+                <div class="preview-metric-box">
+                  <span class="metric-label">Traffic Uploaded</span>
+                  <span class="metric-value text-success">17.60 MB ↑</span>
+                </div>
+              </div>
+
+              <div class="preview-tray-strip">
+                <span class="tray-strip-label">System Tray Live Dropdown:</span>
+                <span class="tray-strip-val">🟢 Connected (10.8.0.42) • 51.8 MB ↓ • 17.6 MB ↑</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES GRID SECTION -->
+    <section id="features" class="features-section">
+      <div class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Built for Performance, Security & Simplicity</h2>
+          <p class="section-subtitle">Everything you need to connect to FortiGate VPNs smoothly on any Linux desktop.</p>
+        </div>
+
+        <div class="features-grid">
+          <!-- Feature 1 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrapper icon-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751A11.959 11.959 0 0112 2.714z" />
+              </svg>
+            </div>
+            <h3 class="feature-title">Privilege Separation Architecture</h3>
+            <p class="feature-text">
+              The GUI runs completely unprivileged in user space. Privileged IPsec tunnel and routing operations are handled by an elevated Rust helper binary via native Polkit (`pkexec`).
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrapper icon-emerald">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+              </svg>
+            </div>
+            <h3 class="feature-title">Hardware & OS Keyring Storage</h3>
+            <p class="feature-text">
+              Pre-Shared Keys (PSK) and account passwords are saved directly into the Linux OS Keyring (`libsecret` / Gnome Keyring / KWallet) with restricted `0600` file fallbacks.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrapper icon-sky">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              </svg>
+            </div>
+            <h3 class="feature-title">Interactive 2FA / Email OTP</h3>
+            <p class="feature-text">
+              Seamlessly intercepts FortiGate `XAUTH_PASSCODE` prompts inside a POSIX PTY (`libc::posix_openpt`) and provides a clean email verification code entry modal.
+            </p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrapper icon-amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-1-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.1 2.1a.75.75 0 001.06 0l3.09-3.09" />
+              </svg>
+            </div>
+            <h3 class="feature-title">System Tray Live Dropdown</h3>
+            <p class="feature-text">
+              Displays live status (🟢/🔴) and kernel XFRM IPsec traffic throughput (`1.25 MB ↓ • 340 KB ↑`) directly in the tray dropdown. Closing the window hides to tray.
+            </p>
+          </div>
+
+          <!-- Feature 5 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrapper icon-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </div>
+            <h3 class="feature-title">Auto-Reconnect & Single Instance</h3>
+            <p class="feature-text">
+              Optionally re-establishes dropped tunnels automatically after 3 seconds. Built-in single-instance lock prevents duplicate process execution.
+            </p>
+          </div>
+
+          <!-- Feature 6 -->
+          <div class="feature-card">
+            <div class="feature-icon-wrapper icon-teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </div>
+            <h3 class="feature-title">Universal Linux Installers</h3>
+            <p class="feature-text">
+              Automated scripts (`./install.sh`) for Arch Linux / Omarchy, Ubuntu / Debian, Fedora / RHEL, and openSUSE with desktop shortcuts and Polkit setup.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INTERACTIVE DEMO / PREVIEW SECTION -->
+    <section id="demo" class="demo-section">
+      <div class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Interactive Application Interface</h2>
+          <p class="section-subtitle">Click the tabs below to preview the desktop client views and features.</p>
+        </div>
+
+        <div class="demo-widget">
+          <div class="demo-tabs">
+            <button class="demo-tab-btn active" data-view="connect">Connect View</button>
+            <button class="demo-tab-btn" data-view="profiles">Profiles Editor</button>
+            <button class="demo-tab-btn" data-view="otp">2FA Email OTP Modal</button>
+            <button class="demo-tab-btn" data-view="connected">Active Tunnel View</button>
+            <button class="demo-tab-btn" data-view="logs">Log Drawer</button>
+            <button class="demo-tab-btn" data-view="tray">System Tray Menu</button>
+          </div>
+
+          <div class="demo-window-frame">
+            <!-- TAB 1: CONNECT VIEW -->
+            <div id="demo-view-connect" class="demo-view-pane active">
+              <div class="mock-form">
+                <div class="mock-instructions">Select a connection profile and initiate the VPN.</div>
+
+                <div class="mock-field">
+                  <label>Select Profile</label>
+                  <div class="mock-select">Default Company VPN</div>
+                </div>
+
+                <div class="mock-card">
+                  <div class="mock-card-row">
+                    <span class="label">Gateway Host:</span>
+                    <span class="val">vpn.example.com</span>
+                  </div>
+                  <div class="mock-card-row">
+                    <span class="label">Username / Email:</span>
+                    <span class="val">user@example.com</span>
+                  </div>
+                </div>
+
+                <div class="mock-checkbox-row">
+                  <div class="mock-checkbox checked">✓</div>
+                  <span>Auto-reconnect on drop</span>
+                </div>
+
+                <button class="btn btn-primary btn-block">Connect VPN</button>
+              </div>
+            </div>
+
+            <!-- TAB 2: PROFILES EDITOR -->
+            <div id="demo-view-profiles" class="demo-view-pane">
+              <div class="mock-form">
+                <div class="mock-instructions">Create, edit, or delete your VPN connection profiles.</div>
+
+                <div class="mock-keyring-badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="keyring-icon">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  <span>Credentials Secured in OS Keyring</span>
+                </div>
+
+                <div class="mock-field">
+                  <label>Profile Name</label>
+                  <div class="mock-input-field">Production Gateway</div>
+                </div>
+
+                <div class="mock-field">
+                  <label>VPN Gateway Host / IP</label>
+                  <div class="mock-input-field">vpn.example.com</div>
+                </div>
+
+                <div class="mock-field">
+                  <label>Remote Identity (IP)</label>
+                  <div class="mock-input-field">203.0.113.50</div>
+                </div>
+
+                <div class="mock-field">
+                  <label>Username / Email</label>
+                  <div class="mock-input-field">user@example.com</div>
+                </div>
+
+                <div class="mock-field">
+                  <label>Pre-Shared Key (PSK)</label>
+                  <div class="mock-input-field">•••••••••••••••• 👁️</div>
+                </div>
+
+                <div class="mock-field">
+                  <label>Account Password</label>
+                  <div class="mock-input-field">•••••••••••••••• 👁️</div>
+                </div>
+
+                <div class="mock-btn-group">
+                  <button class="btn btn-danger">Delete Profile</button>
+                  <button class="btn btn-primary">Save Profile</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 3: OTP MODAL -->
+            <div id="demo-view-otp" class="demo-view-pane">
+              <div class="mock-otp-modal">
+                <div class="otp-badge-icon">✉️</div>
+                <h3 class="mock-heading">Two-Factor Authentication</h3>
+                <p class="mock-subtext">Please enter the security verification code sent to your email.</p>
+
+                <div class="mock-input-box">849201</div>
+
+                <div class="mock-btn-group">
+                  <button class="btn btn-secondary">Cancel</button>
+                  <button class="btn btn-primary">Verify Code</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 4: CONNECTED -->
+            <div id="demo-view-connected" class="demo-view-pane">
+              <div class="mock-connected-hero">
+                <div class="glowing-circle">
+                  <div class="glow-core"></div>
+                </div>
+                <div class="uptime-badge">
+                  <span>00:45:12</span>
+                </div>
+                <div class="connection-status-text">Connected</div>
+              </div>
+
+              <div class="mock-info-card">
+                <div class="mock-info-row">
+                  <span>VPN Virtual IP</span>
+                  <span class="val">10.8.0.42</span>
+                </div>
+                <div class="mock-info-row">
+                  <span>Gateway Host</span>
+                  <span class="val">vpn.example.com</span>
+                </div>
+                <div class="mock-info-row">
+                  <span>Remote Identity</span>
+                  <span class="val">203.0.113.50</span>
+                </div>
+                <div class="mock-info-row">
+                  <span>Protocol / Mode</span>
+                  <span class="val">ESP / NAT-T</span>
+                </div>
+              </div>
+
+              <div class="mock-traffic-strip">
+                <div>⬇️ 12.45 MB Received</div>
+                <div>⬆️ 3.82 MB Sent</div>
+              </div>
+
+              <button class="btn btn-danger btn-block" style="margin-top:16px;">Disconnect</button>
+            </div>
+
+            <!-- TAB 5: LOG DRAWER -->
+            <div id="demo-view-logs" class="demo-view-pane">
+              <div class="mock-log-drawer">
+                <div class="mock-log-header">
+                  <div class="mock-log-tabs">
+                    <span class="tab active">Session Logs</span>
+                    <span class="tab">Engine Logs</span>
+                  </div>
+                  <div class="mock-log-actions">
+                    <span class="btn-sm">Copy</span>
+                    <span class="btn-sm">Export</span>
+                    <span class="btn-sm">Clear</span>
+                  </div>
+                </div>
+                <div class="mock-log-content">
+                  <code>[11:20:01] Initialized Findmore VPN client GUI.
+[11:20:05] Connecting to profile 'Production Gateway' (vpn.example.com)...
+[11:20:06] Initiating Aggressive Mode IKE_SA to 203.0.113.50...
+[11:20:07] Intercepted XAuth 2FA Email Code prompt.
+[11:20:12] Submitting 2FA passcode to tunnel...
+[11:20:13] XAuth authentication successful! Virtual IP 10.8.0.42 installed.
+[11:20:13] CHILD_SA established. IPsec ESP tunnel active.</code>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 6: TRAY DROPDOWN -->
+            <div id="demo-view-tray" class="demo-view-pane">
+              <div class="mock-tray-menu">
+                <div class="tray-menu-item item-status">🟢 &nbsp;Status: Connected (10.8.0.42)</div>
+                <div class="tray-menu-item item-traffic">📊 &nbsp;Traffic: 12.45 MB ↓ &nbsp;•&nbsp; 3.82 MB ↑</div>
+                <div class="tray-divider"></div>
+                <div class="tray-menu-item action">🖥️ &nbsp;&nbsp;Open Dashboard</div>
+                <div class="tray-menu-item action">📥 &nbsp;&nbsp;Hide to System Tray</div>
+                <div class="tray-menu-item action text-danger">❌ &nbsp;&nbsp;Quit Findmore VPN</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTALLATION SECTION -->
+    <section id="installation" class="install-section">
+      <div class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Quick Multi-Distro Installation</h2>
+          <p class="section-subtitle">Run the auto-detecting installer or select your Linux distribution family.</p>
+        </div>
+
+        <div class="installer-card">
+          <div class="installer-tabs">
+            <button class="installer-tab-btn active" data-distro="auto">Universal Installer</button>
+            <button class="installer-tab-btn" data-distro="arch">Arch / Omarchy</button>
+            <button class="installer-tab-btn" data-distro="debian">Ubuntu / Debian</button>
+            <button class="installer-tab-btn" data-distro="fedora">Fedora / RHEL</button>
+            <button class="installer-tab-btn" data-distro="opensuse">openSUSE</button>
+          </div>
+
+          <div class="code-block">
+            <pre><code id="installer-code-text"># Clone repository and run auto-detecting universal installer
+git clone https://github.com/JPHultra/findmore-vpn.git
+cd findmore-vpn
+./install.sh</code></pre>
+            <button id="btn-copy-code" class="btn-copy">
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPATIBILITY TABLE SECTION -->
+    <section id="compatibility" class="compat-section">
+      <div class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">Linux OS & Desktop Feature Matrix</h2>
+          <p class="section-subtitle">Comprehensive compatibility breakdown across distributions and desktop environments.</p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="compat-table">
+            <thead>
+              <tr>
+                <th>Distribution & Desktop</th>
+                <th>PTY Helper</th>
+                <th>2FA OTP</th>
+                <th>System Tray</th>
+                <th>OS Notifications</th>
+                <th>OS Keyring</th>
+                <th>Auto-Reconnect</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Arch Linux / Omarchy (Hyprland)</strong></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Waybar SNI</span></td>
+                <td><span class="badge badge-yes">Mako / SwayNC</span></td>
+                <td><span class="badge badge-yes">SecretService / 0600</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+              </tr>
+              <tr>
+                <td><strong>Ubuntu 22.04 / 24.04 (GNOME)</strong></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">AppIndicator</span></td>
+                <td><span class="badge badge-yes">GNOME Shell</span></td>
+                <td><span class="badge badge-yes">libsecret</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+              </tr>
+              <tr>
+                <td><strong>Fedora 39 / 40 / 41 (GNOME)</strong></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">AppIndicator</span></td>
+                <td><span class="badge badge-yes">GNOME Shell</span></td>
+                <td><span class="badge badge-yes">libsecret</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+              </tr>
+              <tr>
+                <td><strong>KDE Plasma 5 / 6 (Any Distro)</strong></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Native KSNI</span></td>
+                <td><span class="badge badge-yes">KDE Notifications</span></td>
+                <td><span class="badge badge-yes">KWallet / Secret</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+              </tr>
+              <tr>
+                <td><strong>Debian 12 / Mint (XFCE/Cinnamon)</strong></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Native Tray</span></td>
+                <td><span class="badge badge-yes">xfce4-notifyd</span></td>
+                <td><span class="badge badge-yes">libsecret</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+              </tr>
+              <tr>
+                <td><strong>openSUSE Leap / Tumbleweed</strong></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+                <td><span class="badge badge-yes">Native Tray</span></td>
+                <td><span class="badge badge-yes">Desktop DBus</span></td>
+                <td><span class="badge badge-yes">libsecret</span></td>
+                <td><span class="badge badge-yes">Yes</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <img src="./assets/findmore_simple_icon.svg" alt="Findmore Logo" class="footer-logo">
+        <span class="footer-title">Findmore VPN</span>
+      </div>
+
+      <p class="footer-text">
+        Released under the GPL-3.0 License. Designed for Findmore FortiGate VPN connectivity on Linux.
+      </p>
+
+      <div class="footer-links">
+        <a href="https://github.com/JPHultra/findmore-vpn" target="_blank" rel="noopener">GitHub Repository</a>
+        <a href="https://github.com/JPHultra/findmore-vpn/blob/main/COMPATIBILITY.md" target="_blank" rel="noopener">COMPATIBILITY.md</a>
+        <a href="https://github.com/JPHultra/findmore-vpn/blob/main/README.md" target="_blank" rel="noopener">README.md</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+
+</html>
