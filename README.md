@@ -126,12 +126,41 @@ The output binaries are generated in `target/release/`:
 
 ---
 
-## Arch Linux / Omarchy Installation
+## Multi-Distribution Linux Installation
 
-To package and install the application with system integration, execute the installer script from the root of the repository:
+Findmore VPN includes an automated, universal installer script that detects your Linux distribution family and deploys all dependencies, Polkit rules, binaries, and desktop icons.
+
+For full feature matrix and desktop environment details, see [COMPATIBILITY.md](file:///home/joao/Projects/findmore-vpn/COMPATIBILITY.md).
+
+### Quick Universal Installation (All Distros)
+
+Run the root installation script:
 
 ```bash
 ./install.sh
 ```
 
-The script will automatically check for GPG keys, resolve dependencies, build the custom patched strongSwan backend, compile the Tauri client, and register all Polkit rules and desktop shortcuts.
+The script auto-detects your operating system family and routes to the appropriate installer:
+
+- **Arch Linux / Omarchy / Manjaro**: Runs `./scripts/install/install-arch.sh`
+- **Ubuntu / Debian / Pop!_OS / Linux Mint**: Runs `./scripts/install/install-debian.sh`
+- **Fedora / RHEL / Rocky Linux**: Runs `./scripts/install/install-fedora.sh`
+- **openSUSE Leap / Tumbleweed**: Runs `./scripts/install/install-opensuse.sh`
+
+### Manual Distro Script Execution
+
+You can also execute distribution-specific installation scripts directly:
+
+```bash
+# Arch Linux / Omarchy
+./scripts/install/install-arch.sh
+
+# Debian / Ubuntu family
+./scripts/install/install-debian.sh
+
+# Fedora / RHEL family
+./scripts/install/install-fedora.sh
+
+# openSUSE family
+./scripts/install/install-opensuse.sh
+```

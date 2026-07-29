@@ -1,76 +1,67 @@
 #!/usr/bin/env bash
+# Findmore FortiGate VPN Client - Universal Multi-Distro Installer
 
 set -euo pipefail
 
-# Text colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-info() {
-    echo -e "${BLUE}==>${NC} $*"
-}
+info() { echo -e "${BLUE}==>${NC} $*"; }
+success() { echo -e "${GREEN}==>${NC} $*"; }
+warn() { echo -e "${YELLOW}WARNING:${NC} $*"; }
+error() { echo -e "${RED}ERROR:${NC} $*" >&2; exit 1; }
 
-success() {
-    echo -e "${GREEN}==>${NC} $*"
-}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}"
 
-error() {
-    echo -e "${RED}ERROR:${NC} $*" >&2
-    exit 1
-}
+info "Detecting Linux distribution family..."
 
-# 1. Verify Arch Linux / Pacman / makepkg
-if ! command -v pacman >/dev/null 2>&1 || ! command -v makepkg >/dev/null 2>&1; then
-    error "This installation script is designed for Arch Linux and derived systems (e.g. Omarchy) only."
+OS_ID=""
+OS_LIKE=""
+
+if [[ -f /etc/os-release ]]; then
+    # Source os-release safely
+    eval "$(grep -E '^(ID|ID_LIKE)=' /etc/os-release)"
+    OS_ID="${ID:-}"
+    OS_LIKE="${ID_LIKE:-}"
 fi
 
-# 2. Verify repository root
-if [[ ! -d "packaging/arch" || ! -f "package.json" ]]; then
-    error "Please run this script from the root of the findmore-vpn repository directory."
-fi
+info "Detected OS ID: '${OS_ID}', OS LIKE: '${OS_LIKE}'"
 
-# 3. Import strongSwan release GPG key if not present
-info "Checking strongSwan release signing key..."
-if ! gpg --list-keys DF42C170B34DBA77 >/dev/null 2>&1; then
-    info "Importing strongSwan signing key (DF42C170B34DBA77)..."
-    gpg --keyserver hkps://keys.openpgp.org --recv-keys DF42C170B34DBA77 || \
-    gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys DF42C170B34DBA77 || \
-    error "Could not import strongSwan signing key. Please import it manually: gpg --recv-keys DF42C170B34DBA77"
+# Route to distro-specific installer
+if [[ "${OS_ID}" =~ ^(arch|omarchy|manjaro|endeavouros|garuda)$ ]] || [[ "${OS_LIKE}" =~ arch ]]; then
+    info "Launching Arch Linux / Omarchy installer..."
+    exec ./scripts/install/install-arch.sh "$@"
+
+elif [[ "${OS_ID}" =~ ^(ubuntu|debian|pop|mint|elementary|zorin)$ ]] || [[ "${OS_LIKE}" =~ (debian|ubuntu) ]]; then
+    info "Launching Debian / Ubuntu installer..."
+    exec ./scripts/install/install-debian.sh "$@"
+
+elif [[ "${OS_ID}" =~ ^(fedora|rhel|rocky|almalinux|centos)$ ]] || [[ "${OS_LIKE}" =~ fedora ]]; then
+    info "Launching Fedora / RHEL installer..."
+    exec ./scripts/install/install-fedora.sh "$@"
+
+elif [[ "${OS_ID}" =~ ^(opensuse|opensuse-tumbleweed|opensuse-leap|suse)$ ]] || [[ "${OS_LIKE}" =~ suse ]]; then
+    info "Launching openSUSE installer..."
+    exec ./scripts/install/install-opensuse.sh "$@"
+
 else
-    success "strongSwan signing key is already present."
+    warn "Could not automatically match distribution family '${OS_ID}'."
+    echo "Please choose your distribution family to continue:"
+    echo "  1) Arch Linux / Omarchy / Manjaro"
+    echo "  2) Ubuntu / Debian / Pop!_OS / Linux Mint"
+    echo "  3) Fedora / RHEL / Rocky Linux"
+    echo "  4) openSUSE Tumbleweed / Leap"
+    read -rp "Select option [1-4]: " choice
+
+    case "${choice}" in
+        1) exec ./scripts/install/install-arch.sh "$@" ;;
+        2) exec ./scripts/install/install-debian.sh "$@" ;;
+        3) exec ./scripts/install/install-fedora.sh "$@" ;;
+        4) exec ./scripts/install/install-opensuse.sh "$@" ;;
+        *) error "Invalid choice selected." ;;
+    esac
 fi
-
-# 4. Build and Install strongswan-fortigate
-info "Building and installing custom patched strongSwan package (strongswan-fortigate)..."
-cd packaging/arch
-
-# Clean previous build directories to ensure no permission blocks
-rm -rf src/ pkg/
-
-if ! makepkg -f -p strongswan-fortigate.PKGBUILD -si; then
-    error "Failed to build or install strongswan-fortigate."
-fi
-success "strongswan-fortigate installed successfully."
-
-# 5. Build and Install findmore-vpn GUI
-info "Building and installing Findmore VPN GUI client..."
-# Clean previous build directories to ensure no permission blocks
-rm -rf src/ pkg/
-
-if ! makepkg -f -p findmore-vpn.PKGBUILD -si; then
-    error "Failed to build or install findmore-vpn."
-fi
-success "Findmore VPN GUI client installed successfully!"
-
-# 6. Reset permissions to avoid IDE indexer locks
-chmod -R u+rwX pkg/ src/ 2>/dev/null || true
-
-cd ../../
-
-success "Installation complete!"
-echo
-echo "You can launch the VPN Client from your desktop applications menu, or by running:"
-echo "    findmore-vpn-gui"
-echo
