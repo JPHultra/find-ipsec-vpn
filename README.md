@@ -4,6 +4,8 @@ A lightweight, secure, and beautiful desktop application for connecting to the F
 
 This application is built using **Tauri v2 (Rust + HTML/CSS/JS)**. It provides a privilege-separated frontend to drive strongSwan's `charon-cmd` engine, interactively handle FortiGate's email OTP passcode verification, and monitor live connection metrics.
 
+> 📘 **OS Compatibility Matrix**: See [COMPATIBILITY.md](file:///home/joao/Projects/findmore-vpn/COMPATIBILITY.md) for full feature compatibility across Ubuntu, Debian, Fedora, Arch Linux/Omarchy, and openSUSE.
+
 ---
 
 ## Key Features
@@ -75,7 +77,15 @@ findmore-vpn-gui -t
 ```
 findmore-vpn/
 ├── Cargo.toml                  # Workspace definition
+├── COMPATIBILITY.md            # Multi-distro OS feature compatibility matrix
+├── install.sh                  # Universal auto-detecting installer router
 ├── package.json                # Frontend package configuration
+├── scripts/                    # Multi-distro installation scripts
+│   └── install/
+│       ├── install-arch.sh     # Arch Linux / Omarchy / Manjaro installer
+│       ├── install-debian.sh   # Debian / Ubuntu / Mint / Pop!_OS installer
+│       ├── install-fedora.sh   # Fedora / RHEL / Rocky installer
+│       └── install-opensuse.sh # openSUSE Tumbleweed / Leap installer
 ├── src/                        # HTML/CSS/JS Web assets
 │   ├── index.html              # Main dashboard structures
 │   ├── styles.css              # Custom glassmorphic CSS styling
